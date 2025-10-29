@@ -12,11 +12,11 @@ export function ChatLayout() {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
 
   useEffect(() => {
-    // On initial load, create a new chat session
-    if (chats.length === 0) {
+    // On initial load, create a new chat session if none exist
+    if (chats.length === 0 && activeChatId === null) {
       addChat();
     }
-  }, []);
+  }, [chats, activeChatId]);
 
   const addChat = () => {
     const newChatId = crypto.randomUUID();
@@ -37,8 +37,8 @@ export function ChatLayout() {
         const newActiveIndex = Math.max(0, deletedIndex - 1);
         setActiveChatId(updatedChats[newActiveIndex].id);
       } else {
-        // If no chats are left, create a new one
-        addChat();
+        // If no chats are left, set active chat to null
+        setActiveChatId(null);
       }
     }
   };
@@ -70,7 +70,7 @@ export function ChatLayout() {
           />
         </Sidebar>
         <SidebarInset className="bg-background">
-            <ChatComponent key={activeChatId} chat={activeChat} setChats={setChats} />
+            <ChatComponent key={activeChatId} chat={activeChat} setChats={setChats} onNewChat={addChat} />
         </SidebarInset>
       </SidebarProvider>
     </div>

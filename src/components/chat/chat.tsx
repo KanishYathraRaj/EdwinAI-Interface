@@ -7,15 +7,16 @@ import { ChatMessages } from '@/components/chat/chat-messages';
 import { ChatInput } from '@/components/chat/chat-input';
 import { useToast } from '@/hooks/use-toast';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { IconLogo } from '@/components/icons';
 import { ChevronDown } from 'lucide-react';
+import { ChatWelcome } from './chat-welcome';
 
 interface ChatProps {
   chat: Chat | undefined;
   setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
+  onNewChat: () => void;
 }
 
-export default function ChatComponent({ chat, setChats }: ChatProps) {
+export default function ChatComponent({ chat, setChats, onNewChat }: ChatProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -47,11 +48,7 @@ export default function ChatComponent({ chat, setChats }: ChatProps) {
   };
   
   if (!chat) {
-    return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
-        <p>Select a chat or start a new one.</p>
-      </div>
-    );
+    return <ChatWelcome onNewChat={onNewChat} />;
   }
 
   return (
