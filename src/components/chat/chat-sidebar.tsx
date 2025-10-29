@@ -53,69 +53,77 @@ export default function ChatSidebar({ chats, activeChatId, onNewChat, onSelectCh
             </button>
         </div>
 
-        <div className="px-4 mb-2">
-            <p className="px-3 text-xs text-sidebar-foreground/50 font-semibold">Chats</p>
-        </div>
+        {chats.length > 0 ? (
+          <>
+            <div className="px-4 mb-2">
+                <p className="px-3 text-xs text-sidebar-foreground/50 font-semibold">Chats</p>
+            </div>
 
-        <ScrollArea className="h-full">
-            <SidebarMenu className="p-2 pt-0">
-            {recentChats.map(chat => (
-                <SidebarMenuItem key={chat.id}>
-                  <div className="relative w-full group">
-                    <SidebarMenuButton
-                        onClick={() => onSelectChat(chat.id)}
-                        isActive={chat.id === activeChatId}
-                        className="h-10 justify-start rounded-full bg-transparent hover:bg-sidebar-accent data-[active=true]:bg-sidebar-accent w-full"
-                    >
-                        <div className="flex flex-col items-start gap-1 text-left">
-                        <span className="truncate max-w-48">{chat.title}</span>
+            <ScrollArea className="h-full">
+                <SidebarMenu className="p-2 pt-0">
+                {recentChats.map(chat => (
+                    <SidebarMenuItem key={chat.id}>
+                      <div className="relative w-full group">
+                        <SidebarMenuButton
+                            onClick={() => onSelectChat(chat.id)}
+                            isActive={chat.id === activeChatId}
+                            className="h-10 justify-start rounded-full bg-transparent hover:bg-sidebar-accent data-[active=true]:bg-sidebar-accent w-full"
+                        >
+                            <div className="flex flex-col items-start gap-1 text-left">
+                            <span className="truncate max-w-48">{chat.title}</span>
+                            </div>
+                        </SidebarMenuButton>
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="size-7 hover:bg-sidebar-accent/50">
+                                <MoreHorizontal size={16} />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent side="bottom" align="start" className="w-56 bg-card border-sidebar-border text-card-foreground">
+                              <DropdownMenuItem className="focus:bg-sidebar-accent">
+                                <Share size={16} className="mr-2" />
+                                Share
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="focus:bg-sidebar-accent">
+                                <Edit size={16} className="mr-2" />
+                                Rename
+                              </DropdownMenuItem>
+                              <DropdownMenuSub>
+                                <DropdownMenuSubTrigger className="focus:bg-sidebar-accent">
+                                  <Folder size={16} className="mr-2" />
+                                  Move to project
+                                </DropdownMenuSubTrigger>
+                                <DropdownMenuSubContent className="bg-card border-sidebar-border text-card-foreground">
+                                  {/* Add project items here */}
+                                </DropdownMenuSubContent>
+                              </DropdownMenuSub>
+                              <DropdownMenuSeparator className="bg-sidebar-border" />
+                              <DropdownMenuItem className="focus:bg-sidebar-accent">
+                                <Archive size={16} className="mr-2" />
+                                Archive
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => onDeleteChat(chat.id)}
+                                className="text-red-500 focus:bg-red-500/10 focus:text-red-500"
+                              >
+                                <Trash2 size={16} className="mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
-                    </SidebarMenuButton>
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="size-7 hover:bg-sidebar-accent/50">
-                            <MoreHorizontal size={16} />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent side="bottom" align="start" className="w-56 bg-card border-sidebar-border text-card-foreground">
-                          <DropdownMenuItem className="focus:bg-sidebar-accent">
-                            <Share size={16} className="mr-2" />
-                            Share
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="focus:bg-sidebar-accent">
-                            <Edit size={16} className="mr-2" />
-                            Rename
-                          </DropdownMenuItem>
-                          <DropdownMenuSub>
-                            <DropdownMenuSubTrigger className="focus:bg-sidebar-accent">
-                              <Folder size={16} className="mr-2" />
-                              Move to project
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent className="bg-card border-sidebar-border text-card-foreground">
-                              {/* Add project items here */}
-                            </DropdownMenuSubContent>
-                          </DropdownMenuSub>
-                          <DropdownMenuSeparator className="bg-sidebar-border" />
-                          <DropdownMenuItem className="focus:bg-sidebar-accent">
-                            <Archive size={16} className="mr-2" />
-                            Archive
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => onDeleteChat(chat.id)}
-                            className="text-red-500 focus:bg-red-500/10 focus:text-red-500"
-                          >
-                            <Trash2 size={16} className="mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                </SidebarMenuItem>
-            ))}
-            </SidebarMenu>
-        </ScrollArea>
+                      </div>
+                    </SidebarMenuItem>
+                ))}
+                </SidebarMenu>
+            </ScrollArea>
+          </>
+        ) : (
+          <div className="px-4">
+            <p className="px-3 text-sm text-sidebar-foreground/50">No history</p>
+          </div>
+        )}
       </SidebarContent>
       <SidebarFooter className="p-4 border-t border-sidebar-border/50">
         <div className="flex items-center justify-between w-full p-2 rounded-md hover:bg-sidebar-accent cursor-pointer">
