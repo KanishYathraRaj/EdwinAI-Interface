@@ -11,13 +11,6 @@ export function ChatLayout() {
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
 
-  useEffect(() => {
-    // On initial load, create a new chat session if none exist
-    if (chats.length === 0 && activeChatId === null) {
-      addChat();
-    }
-  }, [chats, activeChatId]);
-
   const addChat = () => {
     const newChatId = crypto.randomUUID();
     const newChat: Chat = { id: newChatId, title: 'New Chat', createdAt: new Date(), messages: [] };
@@ -26,18 +19,15 @@ export function ChatLayout() {
   };
 
   const deleteChat = (chatId: string) => {
-    const updatedChats = chats.filter(c => c.id !== chatId);
-    setChats(updatedChats);
+    setChats(prev => prev.filter(c => c.id !== chatId));
 
     if (activeChatId === chatId) {
-      if (updatedChats.length > 0) {
-        // Find the index of the deleted chat
+      const remainingChats = chats.filter(c => c.id !== chatId);
+      if (remainingChats.length > 0) {
         const deletedIndex = chats.findIndex(c => c.id === chatId);
-        // Select the previous chat or the first one if the deleted one was the first
         const newActiveIndex = Math.max(0, deletedIndex - 1);
-        setActiveChatId(updatedChats[newActiveIndex].id);
+        setActiveChatId(remainingChats[newActiveIndex]?.id || null);
       } else {
-        // If no chats are left, set active chat to null
         setActiveChatId(null);
       }
     }
