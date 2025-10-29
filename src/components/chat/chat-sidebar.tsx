@@ -27,6 +27,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface ChatSidebarProps {
   chats: Chat[];
@@ -44,11 +45,11 @@ export default function ChatSidebar({ chats, activeChatId, onNewChat, onSelectCh
     <>
       <SidebarHeader className="h-auto p-4 border-0">
         <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 text-sidebar-foreground">
+            <div className={cn("flex items-center gap-2 text-sidebar-foreground", state === 'collapsed' && "hidden")}>
                 <IconLogo className="size-6" />
-                <span className="text-lg font-semibold group-data-[collapsible=icon]:hidden">ChatGPT</span>
+                <span className="text-lg font-semibold">ChatGPT</span>
             </div>
-            <SidebarTrigger className="size-7" />
+            <SidebarTrigger className={cn("size-7", state === 'collapsed' && "opacity-0 group-hover:opacity-100")} />
         </div>
       </SidebarHeader>
       <SidebarContent className="p-0">
