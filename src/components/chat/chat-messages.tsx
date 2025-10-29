@@ -1,0 +1,41 @@
+'use client'
+
+import type { Message } from "@/lib/types"
+import { ChatWelcome } from "./chat-welcome"
+import { ChatMessage } from "./chat-message"
+import { useEffect, useRef } from "react"
+import { cn } from "@/lib/utils"
+
+interface ChatMessagesProps {
+  messages: Message[]
+  isLoading: boolean
+  className?: string
+}
+
+export function ChatMessages({ messages, isLoading, className }: ChatMessagesProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+        scrollRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [messages.length, isLoading]);
+
+  return (
+    <div className={cn("w-full p-4", className)}>
+        {messages.length === 0 && !isLoading ? (
+            <ChatWelcome />
+        ) : (
+            <div className="flex flex-col gap-4">
+                {messages.map((message) => (
+                    <ChatMessage key={message.id} message={message} />
+                ))}
+                {isLoading && (
+                    <ChatMessage message={{id: 'loading', role: 'assistant', content: 'Thinking...'}} isLoading />
+                )}
+            </div>
+        )}
+        <div ref={scrollRef} />
+    </div>
+  )
+}
