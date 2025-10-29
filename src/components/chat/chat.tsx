@@ -8,6 +8,7 @@ import { ChatInput } from '@/components/chat/chat-input';
 import { useToast } from '@/hooks/use-toast';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { IconLogo } from '@/components/icons';
+import { ChevronDown } from 'lucide-react';
 
 interface ChatProps {
   chat: Chat | undefined;
@@ -59,10 +60,7 @@ export default function ChatComponent({ chat, setChats }: ChatProps) {
           <div className="flex items-center gap-2">
             <SidebarTrigger className="md:hidden"/>
             <div className="flex items-center gap-2">
-              <div className="flex size-7 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <IconLogo className="size-4" />
-              </div>
-              <h1 className="text-lg font-semibold text-foreground">Edwin</h1>
+              <h1 className="text-lg font-semibold text-foreground flex items-center gap-1">ChatGPT <ChevronDown size={16}/></h1>
             </div>
           </div>
       </div>

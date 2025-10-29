@@ -3,7 +3,7 @@
 import { useRef, useEffect, type KeyboardEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send } from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 
 interface ChatInputProps {
@@ -36,32 +36,41 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+      const scrollHeight = textareaRef.current.scrollHeight;
+      const maxHeight = parseInt(getComputedStyle(textareaRef.current).maxHeight, 10);
+      if (scrollHeight > maxHeight) {
+        textareaRef.current.style.height = `${maxHeight}px`;
+        textareaRef.current.style.overflowY = 'auto';
+      } else {
+        textareaRef.current.style.height = `${scrollHeight}px`;
+        textareaRef.current.style.overflowY = 'hidden';
+      }
     }
   }, [content]);
 
   return (
-    <div className="p-4 bg-background">
-      <form onSubmit={handleSubmit(onSubmit)} className="relative flex items-center gap-2">
-        <Textarea
-          {...register('content')}
-          ref={textareaRef}
-          onKeyDown={handleKeyDown}
-          placeholder="Send a message..."
-          className="resize-none pr-16 py-3 max-h-48"
-          rows={1}
-          disabled={isLoading}
-        />
-        <Button
-          type="submit"
-          size="icon"
-          className="shrink-0"
-          disabled={isLoading || !content?.trim()}
-          aria-label="Send message"
-        >
-          <Send size={18} />
-        </Button>
-      </form>
+    <div className="p-4 bg-transparent">
+        <div className="relative">
+            <Textarea
+            {...register('content')}
+            ref={textareaRef}
+            onKeyDown={handleKeyDown}
+            placeholder="Message ChatGPT..."
+            className="resize-none pr-12 py-3 max-h-48 rounded-2xl border-sidebar-border focus-visible:ring-0 focus-visible:border-sidebar-border/50 transition-all"
+            rows={1}
+            disabled={isLoading}
+            />
+            <Button
+            type="submit"
+            size="icon"
+            className="shrink-0 absolute right-2 top-1/2 -translate-y-1/2 size-8 rounded-lg bg-white hover:bg-white/90 text-black disabled:bg-white"
+            disabled={isLoading || !content?.trim()}
+            aria-label="Send message"
+            >
+            <ArrowUp size={18} />
+            </Button>
+        </div>
+        <p className="text-center text-xs text-muted-foreground/50 mt-2">ChatGPT can make mistakes. Consider checking important information.</p>
     </div>
   );
 }

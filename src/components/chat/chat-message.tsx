@@ -1,15 +1,19 @@
 import { cn } from "@/lib/utils"
 import type { Message } from "@/lib/types"
 import { Bot, User } from "lucide-react"
-import { Avatar } from "@/components/ui/avatar"
-import { BeatLoader } from 'react-spinners'; // A simple spinner
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 function ChatAvatar({ role }: { role: Message['role'] }) {
     return (
         <Avatar className="size-8">
-            <div className={cn("flex size-full items-center justify-center rounded-full", role === 'user' ? 'bg-primary/10 text-primary' : 'bg-secondary')}>
+            {role === 'user' ? (
+                <AvatarImage src="https://picsum.photos/seed/user-avatar/32/32" data-ai-hint="profile picture" />
+            ) : (
+                <AvatarImage src="/openai.svg" />
+            )}
+            <AvatarFallback>
                 {role === 'user' ? <User size={18} /> : <Bot size={18} />}
-            </div>
+            </AvatarFallback>
         </Avatar>
     )
 }
@@ -22,23 +26,22 @@ interface ChatMessageProps {
 export function ChatMessage({ message, isLoading = false }: ChatMessageProps) {
   const { role, content } = message
   return (
-    <div className={cn("flex items-start gap-3 animate-in fade-in duration-500", role === 'user' && 'justify-end')}>
-        {role !== 'user' && <ChatAvatar role={role} />}
+    <div className={cn("flex items-start gap-4 animate-in fade-in duration-500")}>
+        <ChatAvatar role={role} />
         <div className={cn(
-            "max-w-[80%] rounded-lg p-3 text-sm whitespace-pre-wrap",
-            role === 'user' ? "bg-primary text-primary-foreground" : "bg-card border",
+            "max-w-[85%] rounded-lg p-0.5 text-sm whitespace-pre-wrap flex-1"
         )}>
+            <p className="font-bold mb-1">{role === 'user' ? 'You' : 'ChatGPT'}</p>
             {isLoading && role === 'assistant' ? (
-                <div className="flex items-center justify-center p-1">
+                <div className="flex items-center justify-start p-1 gap-1">
                     <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]"></div>
                     <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]"></div>
                     <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground"></div>
                 </div>
             ) : (
-                content
+                <div className="prose prose-invert prose-p:my-0">{content}</div>
             )}
         </div>
-        {role === 'user' && <ChatAvatar role={role} />}
     </div>
   )
 }
