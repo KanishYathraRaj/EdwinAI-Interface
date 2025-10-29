@@ -8,6 +8,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
+  SidebarTrigger
 } from '@/components/ui/sidebar';
 import type { Chat } from '@/lib/types';
 import { IconLogo } from '@/components/icons';
@@ -24,13 +25,14 @@ interface ChatSidebarProps {
 export default function ChatSidebar({ chats, activeChatId, onNewChat, onSelectChat }: ChatSidebarProps) {
   return (
     <>
-      <SidebarHeader className="border-b border-sidebar-border">
+      <SidebarHeader className="border-b border-sidebar-border h-14 justify-between">
         <div className="flex items-center gap-2">
           <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <IconLogo className="size-5" />
           </div>
           <h1 className="text-lg font-semibold text-sidebar-foreground">Edwin</h1>
         </div>
+        <SidebarTrigger />
       </SidebarHeader>
       <SidebarContent className="p-0">
         <div className="p-2">

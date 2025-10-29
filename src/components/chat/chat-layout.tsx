@@ -13,13 +13,15 @@ export function ChatLayout() {
 
   useEffect(() => {
     // On initial load, create a new chat session
-    addChat();
+    if (chats.length === 0) {
+      addChat();
+    }
   }, []);
 
   const addChat = () => {
     const newChatId = crypto.randomUUID();
     const newChat: Chat = { id: newChatId, title: 'New Chat', createdAt: new Date(), messages: [] };
-    setChats(prev => [...prev, newChat]);
+    setChats(prev => [newChat, ...prev]);
     setActiveChatId(newChatId);
   };
 
@@ -38,9 +40,9 @@ export function ChatLayout() {
 
 
   return (
-    <div className="h-full w-full bg-sidebar">
+    <div className="h-full w-full">
       <SidebarProvider>
-        <Sidebar collapsible="icon">
+        <Sidebar collapsible="icon" className="bg-sidebar">
           <ChatSidebar 
             chats={chats.sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime())}
             activeChatId={activeChatId}
