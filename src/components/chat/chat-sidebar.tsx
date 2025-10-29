@@ -49,7 +49,7 @@ export default function ChatSidebar({ chats, activeChatId, onNewChat, onSelectCh
                 <IconLogo className="size-6" />
                 <span className="text-lg font-semibold">ChatGPT</span>
             </div>
-            <SidebarTrigger className={cn("size-7", state === 'collapsed' ? 'absolute left-1/2 top-3 -translate-x-1/2 opacity-0 group-hover:opacity-100' : 'group-hover:block')} />
+            <SidebarTrigger className={cn("size-7 opacity-0 group-hover:opacity-100", state === 'collapsed' ? 'absolute left-1/2 top-3 -translate-x-1/2' : '')} />
         </div>
       </SidebarHeader>
       <SidebarContent className="p-0">
