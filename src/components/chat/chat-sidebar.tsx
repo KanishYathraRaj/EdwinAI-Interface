@@ -1,5 +1,5 @@
 'use client';
-import { Archive, ArrowUp, Edit, Search, User, ChevronDown, MoreHorizontal, Share, Folder, Trash2 } from 'lucide-react';
+import { Archive, Edit, Search, User, MoreHorizontal, Share, Folder, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   SidebarHeader,
@@ -32,13 +32,16 @@ export default function ChatSidebar({ chats, activeChatId, onNewChat, onSelectCh
         <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2 text-sidebar-foreground">
                 <IconLogo className="size-6" />
-                <span className="font-semibold">New chat</span>
             </div>
             <SidebarTrigger className="size-7" />
         </div>
       </SidebarHeader>
       <SidebarContent className="p-0">
         <div className="px-4 pb-4 space-y-2">
+            <button onClick={onNewChat} className="w-full flex items-center h-10 px-3 rounded-full bg-sidebar-accent text-sidebar-foreground/80 hover:bg-sidebar-accent/80">
+                <Pencil size={18} className="mr-3"/>
+                <span className="text-sm">New chat</span>
+            </button>
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                 <input placeholder="Search chats" className="w-full h-10 rounded-full bg-sidebar-accent pl-10 pr-4 text-sm" />
@@ -125,10 +128,6 @@ export default function ChatSidebar({ chats, activeChatId, onNewChat, onSelectCh
                 </div>
             </div>
         </div>
-        <Button variant="outline" className="w-full h-10 bg-transparent border-sidebar-border/50 text-sidebar-foreground justify-start gap-2 hover:bg-sidebar-accent hover:text-sidebar-foreground">
-            <ArrowUp size={16} className="bg-green-500 text-white rounded-full p-0.5" />
-            Upgrade your plan
-        </Button>
       </SidebarFooter>
     </>
   );
