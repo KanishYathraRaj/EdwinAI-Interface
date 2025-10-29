@@ -49,17 +49,18 @@ export default function ChatSidebar({ chats, activeChatId, onNewChat, onSelectCh
                 <IconLogo className="size-6" />
                 <span className="text-lg font-semibold">ChatGPT</span>
             </div>
-            <SidebarTrigger className={cn("size-7", state === 'collapsed' && "opacity-0 group-hover:opacity-100")} />
+            <SidebarTrigger className={cn("size-7", state === 'expanded' && 'hidden group-hover:block')} />
+            <SidebarTrigger className={cn("size-7", state === 'collapsed' && 'absolute left-1/2 -translate-x-1/2 top-3 opacity-0 group-hover:opacity-100')} />
         </div>
       </SidebarHeader>
       <SidebarContent className="p-0">
-        <div className="px-4 pb-4 space-y-2">
+        <div className="px-2 pb-4 space-y-2">
             <SidebarMenu className="p-0">
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={onNewChat} className="w-full justify-start h-10 px-3 rounded-md bg-transparent hover:bg-sidebar-accent" tooltip="New chat">
+              <SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
+                <Button onClick={onNewChat} variant="ghost" className="w-full justify-start h-10 px-3 rounded-md bg-transparent hover:bg-sidebar-accent">
                     <Pencil size={18} />
-                    <span className="group-data-[collapsible=icon]:hidden">New chat</span>
-                </SidebarMenuButton>
+                    <span>New chat</span>
+                </Button>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton className="w-full justify-start h-10 px-3 rounded-md bg-transparent hover:bg-sidebar-accent" tooltip="Search">
