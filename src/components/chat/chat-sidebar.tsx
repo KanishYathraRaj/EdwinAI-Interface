@@ -1,5 +1,5 @@
 'use client';
-import { Archive, Edit, Search, User, MoreHorizontal, Share, Folder, Trash2, Pencil } from 'lucide-react';
+import { Archive, Edit, Search, User, MoreHorizontal, Share, Folder, Trash2, Pencil, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -49,12 +49,18 @@ export default function ChatSidebar({ chats, activeChatId, onNewChat, onSelectCh
                 <IconLogo className="size-6" />
                 <span className="text-lg font-semibold">ChatGPT</span>
             </div>
-            <SidebarTrigger className={cn("size-7 opacity-0 group-hover:opacity-100", state === 'collapsed' ? 'absolute left-1/2 top-3 -translate-x-1/2' : '')} />
+            <SidebarTrigger className={cn("size-7 opacity-0 group-hover:opacity-100", state === 'collapsed' ? 'absolute left-1/2 top-3 -translate-x-1/2 opacity-100' : '')} />
         </div>
       </SidebarHeader>
       <SidebarContent className="p-0">
         <div className="px-2 pb-4 space-y-2">
             <SidebarMenu className="p-0">
+              <SidebarMenuItem>
+                <SidebarMenuButton className="w-full justify-start h-10 px-3 rounded-md bg-transparent hover:bg-sidebar-accent" tooltip="General">
+                    <Bot size={18} />
+                    <span className="group-data-[collapsible=icon]:hidden">General</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={onNewChat} className="w-full justify-start h-10 px-3 rounded-md bg-transparent hover:bg-sidebar-accent" tooltip="New chat">
                     <Pencil size={18} />
@@ -65,12 +71,6 @@ export default function ChatSidebar({ chats, activeChatId, onNewChat, onSelectCh
                 <SidebarMenuButton className="w-full justify-start h-10 px-3 rounded-md bg-transparent hover:bg-sidebar-accent" tooltip="Search">
                     <Search size={18} />
                     <span className="group-data-[collapsible=icon]:hidden">Search</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="w-full justify-start h-10 px-3 rounded-md bg-transparent hover:bg-sidebar-accent" tooltip="Library">
-                    <Archive size={18}/>
-                    <span className="group-data-[collapsible=icon]:hidden">Library</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
