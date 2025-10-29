@@ -25,6 +25,24 @@ export function ChatLayout() {
     setActiveChatId(newChatId);
   };
 
+  const deleteChat = (chatId: string) => {
+    const updatedChats = chats.filter(c => c.id !== chatId);
+    setChats(updatedChats);
+
+    if (activeChatId === chatId) {
+      if (updatedChats.length > 0) {
+        // Find the index of the deleted chat
+        const deletedIndex = chats.findIndex(c => c.id === chatId);
+        // Select the previous chat or the first one if the deleted one was the first
+        const newActiveIndex = Math.max(0, deletedIndex - 1);
+        setActiveChatId(updatedChats[newActiveIndex].id);
+      } else {
+        // If no chats are left, create a new one
+        addChat();
+      }
+    }
+  };
+
   const activeChat = chats.find(chat => chat.id === activeChatId);
 
   useEffect(() => {
@@ -48,6 +66,7 @@ export function ChatLayout() {
             activeChatId={activeChatId}
             onNewChat={addChat}
             onSelectChat={setActiveChatId}
+            onDeleteChat={deleteChat}
           />
         </Sidebar>
         <SidebarInset className="bg-background">

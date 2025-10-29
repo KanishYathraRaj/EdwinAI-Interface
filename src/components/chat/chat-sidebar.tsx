@@ -21,9 +21,10 @@ interface ChatSidebarProps {
   activeChatId: string | null;
   onNewChat: () => void;
   onSelectChat: (id: string) => void;
+  onDeleteChat: (id: string) => void;
 }
 
-export default function ChatSidebar({ chats, activeChatId, onNewChat, onSelectChat }: ChatSidebarProps) {
+export default function ChatSidebar({ chats, activeChatId, onNewChat, onSelectChat, onDeleteChat }: ChatSidebarProps) {
   const recentChats = chats.slice(0, 9);
   
   return (
@@ -100,7 +101,10 @@ export default function ChatSidebar({ chats, activeChatId, onNewChat, onSelectCh
                             <Archive size={16} className="mr-2" />
                             Archive
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-500 focus:bg-red-500/10 focus:text-red-500">
+                          <DropdownMenuItem 
+                            onClick={() => onDeleteChat(chat.id)}
+                            className="text-red-500 focus:bg-red-500/10 focus:text-red-500"
+                          >
                             <Trash2 size={16} className="mr-2" />
                             Delete
                           </DropdownMenuItem>
