@@ -1,27 +1,27 @@
 {
   "entities": {
-    "ChatSession": {
+    "Subject": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ChatSession",
+      "title": "Subject",
       "type": "object",
-      "description": "Represents a single chat session, containing messages and metadata.",
+      "description": "Represents a single subject session, containing messages and metadata.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the chat session."
+          "description": "Unique identifier for the subject session."
         },
         "title": {
           "type": "string",
-          "description": "Title or summary of the chat session."
+          "description": "Title or summary of the subject session."
         },
         "startTime": {
           "type": "string",
-          "description": "Timestamp indicating when the chat session started.",
+          "description": "Timestamp indicating when the subject session started.",
           "format": "date-time"
         },
         "endTime": {
           "type": "string",
-          "description": "Timestamp indicating when the chat session ended (or last updated).",
+          "description": "Timestamp indicating when the subject session ended (or last updated).",
           "format": "date-time"
         }
       },
@@ -35,15 +35,15 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Message",
       "type": "object",
-      "description": "Represents a single message within a chat session.",
+      "description": "Represents a single message within a subject session.",
       "properties": {
         "id": {
           "type": "string",
           "description": "Unique identifier for the message."
         },
-        "chatSessionId": {
+        "subjectId": {
           "type": "string",
-          "description": "Reference to ChatSession. (Relationship: ChatSession 1:N Message)"
+          "description": "Reference to Subject. (Relationship: Subject 1:N Message)"
         },
         "sender": {
           "type": "string",
@@ -61,7 +61,7 @@
       },
       "required": [
         "id",
-        "chatSessionId",
+        "subjectId",
         "sender",
         "content",
         "timestamp"
@@ -77,41 +77,41 @@
   "firestore": {
     "structure": [
       {
-        "path": "/users/{userId}/chatSessions/{chatSessionId}",
+        "path": "/users/{userId}/subjects/{subjectId}",
         "definition": {
-          "entityName": "ChatSession",
+          "entityName": "Subject",
           "schema": {
-            "$ref": "#/backend/entities/ChatSession"
+            "$ref": "#/backend/entities/Subject"
           },
-          "description": "Stores chat sessions specific to a user. Path-based ownership ensures users can only access their own chat sessions.",
+          "description": "Stores subject sessions specific to a user. Path-based ownership ensures users can only access their own subject sessions.",
           "params": [
             {
               "name": "userId",
               "description": "The unique identifier for the user."
             },
             {
-              "name": "chatSessionId",
-              "description": "The unique identifier for the chat session."
+              "name": "subjectId",
+              "description": "The unique identifier for the subject session."
             }
           ]
         }
       },
       {
-        "path": "/users/{userId}/chatSessions/{chatSessionId}/messages/{messageId}",
+        "path": "/users/{userId}/subjects/{subjectId}/messages/{messageId}",
         "definition": {
           "entityName": "Message",
           "schema": {
             "$ref": "#/backend/entities/Message"
           },
-          "description": "Stores messages within a specific chat session for a user. Path-based ownership ensures users can only access messages within their chat sessions.",
+          "description": "Stores messages within a specific subject session for a user. Path-based ownership ensures users can only access messages within their subject sessions.",
           "params": [
             {
               "name": "userId",
               "description": "The unique identifier for the user."
             },
             {
-              "name": "chatSessionId",
-              "description": "The unique identifier for the chat session."
+              "name": "subjectId",
+              "description": "The unique identifier for the subject session."
             },
             {
               "name": "messageId",
@@ -121,6 +121,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to support the Edwin app's chat functionality, focusing on user-specific chat sessions and messages. The primary structure is based on nested collections to maintain a clear ownership and relationship between users, chat sessions, and messages. Each user has their own collection of chat sessions, and each chat session contains its own collection of messages. This approach facilitates secure and efficient data retrieval and management. The use of path-based ownership `/users/{userId}/chatSessions/{chatSessionId}/messages/{messageId}` ensures that each user can only access their own data. Authorization Independence is achieved as there is no need to retrieve parent data to validate access; security rules can directly verify the `request.auth.uid` against the `{userId}` parameter in the path. QAPs are satisfied because list operations are naturally scoped to a user's chat sessions and messages, preventing unauthorized access to other users' data. Homogeneous Security Posture is achieved by ensuring all documents within a collection share the same security requirements, simplifying rules and preventing unintended access."
+    "reasoning": "The Firestore structure is designed to support the Edwin app's chat functionality, focusing on user-specific subject sessions and messages. The primary structure is based on nested collections to maintain a clear ownership and relationship between users, subject sessions, and messages. Each user has their own collection of subject sessions, and each subject session contains its own collection of messages. This approach facilitates secure and efficient data retrieval and management. The use of path-based ownership `/users/{userId}/subjects/{subjectId}/messages/{messageId}` ensures that each user can only access their own data. Authorization Independence is achieved as there is no need to retrieve parent data to validate access; security rules can directly verify the `request.auth.uid` against the `{userId}` parameter in the path. QAPs are satisfied because list operations are naturally scoped to a user's subject sessions and messages, preventing unauthorized access to other users' data. Homogeneous Security Posture is achieved by ensuring all documents within a collection share the same security requirements, simplifying rules and preventing unintended access."
   }
 }

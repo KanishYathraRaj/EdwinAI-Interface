@@ -26,7 +26,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   const messagesQuery = useMemoFirebase(() => {
     if (!user || !chat?.id) return null;
     return query(
-      collection(firestore, `users/${user.uid}/chatSessions/${chat.id}/messages`),
+      collection(firestore, `users/${user.uid}/subjects/${chat.id}/messages`),
       orderBy('timestamp', 'asc')
     );
   }, [firestore, user, chat?.id]);
@@ -45,7 +45,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     setIsLoading(true);
 
     try {
-      const messagesCol = collection(firestore, `users/${user.uid}/chatSessions/${chat.id}/messages`);
+      const messagesCol = collection(firestore, `users/${user.uid}/subjects/${chat.id}/messages`);
       await addDoc(messagesCol, userMessage);
       
       const currentMessages = messages || [];

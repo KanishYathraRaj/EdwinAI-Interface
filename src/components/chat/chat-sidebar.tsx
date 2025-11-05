@@ -21,7 +21,7 @@ import {
   SidebarTrigger,
   useSidebar
 } from '@/components/ui/sidebar';
-import type { ChatSession } from '@/lib/types';
+import type { Subject } from '@/lib/types';
 import { IconLogo } from '@/components/icons';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -33,7 +33,7 @@ import { useAuth, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
 
 interface ChatSidebarProps {
-  chats: ChatSession[];
+  chats: Subject[];
   activeChatId: string | null;
   onNewSubject: (title: string) => void;
   onSelectChat: (id: string) => void;
@@ -89,12 +89,12 @@ export default function ChatSidebar({ chats, activeChatId, onNewSubject, onSelec
 
         {isLoading ? (
           <div className="px-4 group-data-[collapsible=icon]:hidden">
-            <p className="px-3 text-sm text-sidebar-foreground/50">Loading chats...</p>
+            <p className="px-3 text-sm text-sidebar-foreground/50">Loading subjects...</p>
           </div>
         ) : chats.length > 0 ? (
           <>
             <div className="px-4 mb-2 group-data-[collapsible=icon]:hidden">
-                <p className="px-3 text-xs text-sidebar-foreground/50 font-semibold">Chats</p>
+                <p className="px-3 text-xs text-sidebar-foreground/50 font-semibold">Subjects</p>
             </div>
 
             <ScrollArea className="h-full">
@@ -181,7 +181,7 @@ export default function ChatSidebar({ chats, activeChatId, onNewSubject, onSelec
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the chat.
+              This will permanently delete the subject.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

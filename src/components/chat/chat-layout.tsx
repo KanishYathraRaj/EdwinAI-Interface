@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
-import type { Chat, ChatSession } from '@/lib/types';
+import type { Chat, Subject } from '@/lib/types';
 import ChatSidebar from '@/components/chat/chat-sidebar';
 import ChatComponent from '@/components/chat/chat';
 import { summarizeChatHistory } from '@/ai/flows/summarize-chat-history';
@@ -16,15 +16,15 @@ export function ChatLayout() {
   const firestore = useFirestore();
   const router = useRouter();
 
-  const chatSessionsQuery = useMemoFirebase(() => {
+  const subjectsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(
-      collection(firestore, `users/${user.uid}/chatSessions`),
+      collection(firestore, `users/${user.uid}/subjects`),
       orderBy('createdAt', 'desc')
     );
   }, [firestore, user]);
 
-  const { data: chats, isLoading: areChatsLoading } = useCollection<ChatSession>(chatSessionsQuery);
+  const { data: subjects, isLoading: areSubjectsLoading } = useCollection<Subject>(subjectsQuery);
 
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
 
@@ -35,33 +35,33 @@ export function ChatLayout() {
   }, [user, isUserLoading, router]);
 
   useEffect(() => {
-    if (!activeChatId && chats && chats.length > 0) {
-      setActiveChatId(chats[0].id);
+    if (!activeChatId && subjects && subjects.length > 0) {
+      setActiveChatId(subjects[0].id);
     }
-  }, [chats, activeChatId]);
+  }, [subjects, activeChatId]);
 
   const addChat = async (title: string) => {
     if (!user) return;
     try {
-      const docRef = await addDoc(collection(firestore, `users/${user.uid}/chatSessions`), {
+      const docRef = await addDoc(collection(firestore, `users/${user.uid}/subjects`), {
         title: title || 'New Subject',
         createdAt: serverTimestamp(),
       });
       setActiveChatId(docRef.id);
     } catch (error) {
-      console.error("Error creating new chat session: ", error);
+      console.error("Error creating new subject: ", error);
     }
   };
 
   const deleteChat = async (chatId: string) => {
     if (!user) return;
-    const chatDocRef = doc(firestore, `users/${user.uid}/chatSessions`, chatId);
+    const chatDocRef = doc(firestore, `users/${user.uid}/subjects`, chatId);
     await deleteDoc(chatDocRef);
 
     if (activeChatId === chatId) {
-      const remainingChats = chats?.filter(c => c.id !== chatId);
+      const remainingChats = subjects?.filter(c => c.id !== chatId);
       if (remainingChats && remainingChats.length > 0) {
-        const deletedIndex = chats?.findIndex(c => c.id === chatId) ?? 0;
+        const deletedIndex = subjects?.findIndex(c => c.id === chatId) ?? 0;
         const newActiveIndex = Math.max(0, deletedIndex - 1);
         setActiveChatId(remainingChats[newActiveIndex]?.id || null);
       } else {
@@ -70,15 +70,15 @@ export function ChatLayout() {
     }
   };
 
-  const activeChat = useMemo(() => chats?.find(chat => chat.id === activeChatId), [chats, activeChatId]);
+  const activeChat = useMemo(() => subjects?.find(chat => chat.id === activeChatId), [subjects, activeChatId]);
 
   useEffect(() => {
-    if (activeChat && activeChat.messages && activeChat.messages.length > 1 && activeChat.title === 'New Subject') {
-      const history = activeChat.messages.map(m => `${m.role}: ${m.content}`).join('\n');
+    if (activeChat && (activeChat as Chat).messages && (activeChat as Chat).messages.length > 1 && activeChat.title === 'New Subject') {
+      const history = (activeChat as Chat).messages.map(m => `${m.role}: ${m.content}`).join('\n');
       summarizeChatHistory({ chatHistory: history })
         .then(summary => {
           if (user && activeChat.id) {
-            const chatDocRef = doc(firestore, `users/${user.uid}/chatSessions`, activeChat.id);
+            const chatDocRef = doc(firestore, `users/${user.uid}/subjects`, activeChat.id);
             updateDoc(chatDocRef, { title: summary.summary });
           }
         })
@@ -87,13 +87,13 @@ export function ChatLayout() {
   }, [activeChat, firestore, user]);
 
   const sortedChats = useMemo(() => {
-    if (!chats) return [];
-    return [...chats].sort((a, b) => {
+    if (!subjects) return [];
+    return [...subjects].sort((a, b) => {
       const dateA = a.createdAt?.toDate() || new Date(0);
       const dateB = b.createdAt?.toDate() || new Date(0);
       return dateB.getTime() - dateA.getTime();
     });
-  }, [chats]);
+  }, [subjects]);
   
   if (isUserLoading || !user) {
     return (
@@ -113,7 +113,7 @@ export function ChatLayout() {
             onNewSubject={addChat}
             onSelectChat={setActiveChatId}
             onDeleteChat={deleteChat}
-            isLoading={areChatsLoading || isUserLoading}
+            isLoading={areSubjectsLoading || isUserLoading}
           />
         </Sidebar>
         <SidebarInset className="bg-background">

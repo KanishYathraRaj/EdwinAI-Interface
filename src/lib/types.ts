@@ -15,7 +15,7 @@ export interface Chat {
 }
 
 
-export interface ChatSession {
+export interface Subject {
   id: string;
   title: string;
   createdAt: Timestamp;
