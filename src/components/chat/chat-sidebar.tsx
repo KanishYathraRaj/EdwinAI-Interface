@@ -21,7 +21,7 @@ import {
   SidebarTrigger,
   useSidebar
 } from '@/components/ui/sidebar';
-import type { Chat } from '@/lib/types';
+import type { ChatSession } from '@/lib/types';
 import { IconLogo } from '@/components/icons';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -31,14 +31,15 @@ import { cn } from '@/lib/utils';
 import { NewSubjectDialog } from './new-subject-dialog';
 
 interface ChatSidebarProps {
-  chats: Chat[];
+  chats: ChatSession[];
   activeChatId: string | null;
   onNewSubject: (title: string) => void;
   onSelectChat: (id: string) => void;
   onDeleteChat: (id: string) => void;
+  isLoading: boolean;
 }
 
-export default function ChatSidebar({ chats, activeChatId, onNewSubject, onSelectChat, onDeleteChat }: ChatSidebarProps) {
+export default function ChatSidebar({ chats, activeChatId, onNewSubject, onSelectChat, onDeleteChat, isLoading }: ChatSidebarProps) {
   const [deleteChatId, setDeleteChatId] = useState<string | null>(null);
   const [isNewSubjectDialogOpen, setIsNewSubjectDialogOpen] = useState(false);
   const { state } = useSidebar();
@@ -78,7 +79,11 @@ export default function ChatSidebar({ chats, activeChatId, onNewSubject, onSelec
             </SidebarMenu>
         </div>
 
-        {chats.length > 0 ? (
+        {isLoading ? (
+          <div className="px-4 group-data-[collapsible=icon]:hidden">
+            <p className="px-3 text-sm text-sidebar-foreground/50">Loading chats...</p>
+          </div>
+        ) : chats.length > 0 ? (
           <>
             <div className="px-4 mb-2 group-data-[collapsible=icon]:hidden">
                 <p className="px-3 text-xs text-sidebar-foreground/50 font-semibold">Chats</p>

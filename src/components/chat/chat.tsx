@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Chat, Message } from '@/lib/types';
 import { continueConversation } from '@/ai/flows/chat';
 import { ChatMessages } from '@/components/chat/chat-messages';
@@ -9,30 +9,60 @@ import { useToast } from '@/hooks/use-toast';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { ChevronDown } from 'lucide-react';
 import { ChatWelcome } from './chat-welcome';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, addDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 
 interface ChatProps {
   chat: Chat | undefined;
-  setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
   onNewChat: () => void;
 }
 
-export default function ChatComponent({ chat, setChats, onNewChat }: ChatProps) {
+export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const messagesQuery = useMemoFirebase(() => {
+    if (!user || !chat?.id) return null;
+    return query(
+      collection(firestore, `users/${user.uid}/chatSessions/${chat.id}/messages`),
+      orderBy('timestamp', 'asc')
+    );
+  }, [firestore, user, chat?.id]);
+
+  const { data: messages, isLoading: messagesLoading } = useCollection<Message>(messagesQuery);
 
   const handleSend = async (content: string) => {
-    if (!chat) return;
+    if (!chat || !user) return;
 
-    const userMessage: Message = { id: crypto.randomUUID(), role: 'user', content };
-    const updatedMessages = [...chat.messages, userMessage];
+    const userMessage: Omit<Message, 'id'> = {
+      role: 'user',
+      content,
+      timestamp: serverTimestamp(),
+    };
     
-    setChats(prev => prev.map(c => c.id === chat.id ? { ...c, messages: updatedMessages } : c));
     setIsLoading(true);
 
     try {
-      const responseContent = await continueConversation({ history: updatedMessages });
-      const assistantMessage: Message = { id: crypto.randomUUID(), role: 'assistant', content: responseContent };
-      setChats(prev => prev.map(c => c.id === chat.id ? { ...c, messages: [...updatedMessages, assistantMessage] } : c));
+      const messagesCol = collection(firestore, `users/${user.uid}/chatSessions/${chat.id}/messages`);
+      await addDoc(messagesCol, userMessage);
+      
+      const currentMessages = messages || [];
+      
+      const responseContent = await continueConversation({
+        history: [...currentMessages, { ...userMessage, id: 'temp-id' }].map(m => ({
+          role: m.role === 'assistant' ? 'assistant' : 'user',
+          content: m.content
+        }))
+      });
+
+      const assistantMessage: Omit<Message, 'id'> = {
+        role: 'assistant',
+        content: responseContent,
+        timestamp: serverTimestamp(),
+      };
+      await addDoc(messagesCol, assistantMessage);
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -40,8 +70,6 @@ export default function ChatComponent({ chat, setChats, onNewChat }: ChatProps) 
         description: "Failed to get a response from the AI. Please try again.",
         variant: "destructive",
       });
-      // remove the user message on error to allow retry
-      setChats(prev => prev.map(c => c.id === chat.id ? { ...c, messages: chat.messages } : c));
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +90,7 @@ export default function ChatComponent({ chat, setChats, onNewChat }: ChatProps) 
           </div>
       </div>
       <div className="flex-1 overflow-y-auto w-full max-w-4xl">
-        <ChatMessages messages={chat.messages} isLoading={isLoading} />
+        <ChatMessages messages={messages || []} isLoading={isLoading || messagesLoading} />
       </div>
       <div className="w-full max-w-4xl pb-4">
         <ChatInput onSend={handleSend} isLoading={isLoading} />
