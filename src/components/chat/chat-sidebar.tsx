@@ -1,5 +1,5 @@
 'use client';
-import { Archive, Edit, Search, User, MoreHorizontal, Share, Folder, Trash2, Pencil, Bot } from 'lucide-react';
+import { Edit, Search, User, MoreHorizontal, Share, Trash2, Pencil, Bot, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -29,6 +29,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { NewSubjectDialog } from './new-subject-dialog';
+import { useAuth, useUser } from '@/firebase';
+import { signOut } from 'firebase/auth';
 
 interface ChatSidebarProps {
   chats: ChatSession[];
@@ -43,6 +45,12 @@ export default function ChatSidebar({ chats, activeChatId, onNewSubject, onSelec
   const [deleteChatId, setDeleteChatId] = useState<string | null>(null);
   const [isNewSubjectDialogOpen, setIsNewSubjectDialogOpen] = useState(false);
   const { state } = useSidebar();
+  const { user } = useUser();
+  const auth = useAuth();
+  
+  const handleSignOut = async () => {
+    await signOut(auth);
+  };
   
   return (
     <>
@@ -142,20 +150,30 @@ export default function ChatSidebar({ chats, activeChatId, onNewSubject, onSelec
         )}
       </SidebarContent>
       <SidebarFooter className="p-4 border-t border-sidebar-border/50">
-        <div className="flex items-center justify-between w-full p-2 rounded-md hover:bg-sidebar-accent cursor-pointer group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:justify-center">
-            <div className="flex items-center gap-3">
-                <Avatar className="size-8">
-                    <AvatarImage src="https://picsum.photos/seed/avatar/32/32" data-ai-hint="profile picture" />
-                    <AvatarFallback>
-                        <User size={18} />
-                    </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col text-sm group-data-[collapsible=icon]:hidden">
-                    <span className="font-semibold text-sidebar-foreground">Kanish Yathra Raj</span>
-                    <span className="text-sidebar-foreground/60">Free</span>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <div className="flex items-center justify-between w-full p-2 rounded-md hover:bg-sidebar-accent cursor-pointer group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:justify-center">
+                    <div className="flex items-center gap-3">
+                        <Avatar className="size-8">
+                            <AvatarImage src={user?.photoURL || "https://picsum.photos/seed/avatar/32/32"} data-ai-hint="profile picture" />
+                            <AvatarFallback>
+                                <User size={18} />
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col text-sm group-data-[collapsible=icon]:hidden">
+                            <span className="font-semibold text-sidebar-foreground">{user?.displayName || user?.email || 'Anonymous'}</span>
+                            <span className="text-sidebar-foreground/60">Free</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="top" align="start" className="w-48 bg-card border-sidebar-border text-card-foreground">
+                <DropdownMenuItem onClick={handleSignOut} className="focus:bg-sidebar-accent">
+                    <LogOut size={16} className="mr-2" />
+                    Sign Out
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
       </SidebarFooter>
 
       <AlertDialog open={!!deleteChatId} onOpenChange={(open) => !open && setDeleteChatId(null)}>

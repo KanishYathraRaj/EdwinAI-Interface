@@ -7,13 +7,14 @@ import ChatSidebar from '@/components/chat/chat-sidebar';
 import ChatComponent from '@/components/chat/chat';
 import { summarizeChatHistory } from '@/ai/flows/summarize-chat-history';
 import { useAuth, useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import { useRouter } from 'next/navigation';
 import { collection, serverTimestamp, addDoc, doc, deleteDoc, updateDoc, orderBy, query } from 'firebase/firestore';
 
 export function ChatLayout() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const firestore = useFirestore();
+  const router = useRouter();
 
   const chatSessionsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -29,9 +30,9 @@ export function ChatLayout() {
 
   useEffect(() => {
     if (!user && !isUserLoading) {
-      initiateAnonymousSignIn(auth);
+      router.push('/login');
     }
-  }, [user, isUserLoading, auth]);
+  }, [user, isUserLoading, router]);
 
   useEffect(() => {
     if (!activeChatId && chats && chats.length > 0) {
@@ -93,6 +94,14 @@ export function ChatLayout() {
       return dateB.getTime() - dateA.getTime();
     });
   }, [chats]);
+  
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="h-full w-full">
