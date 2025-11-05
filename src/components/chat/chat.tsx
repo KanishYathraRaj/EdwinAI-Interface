@@ -10,7 +10,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { BookOpen } from 'lucide-react';
 import { ChatWelcome } from './chat-welcome';
 import { useUser, useFirestore } from '@/firebase';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import SyllabusDisplay from './syllabus-display';
@@ -42,7 +42,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       role: 'user',
-      content,
+      message: content,
     };
 
     const updatedHistory = [...messages, userMessage];
@@ -53,14 +53,14 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
       const responseContent = await continueConversation({
         history: updatedHistory.map(m => ({
           role: m.role,
-          content: m.content
+          message: m.message
         }))
       });
 
       const assistantMessage: Message = {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
-        content: responseContent,
+        message: responseContent,
       };
 
       const finalHistory = [...updatedHistory, assistantMessage];

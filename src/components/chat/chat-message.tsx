@@ -24,14 +24,18 @@ interface ChatMessageProps {
 }
 
 export function ChatMessage({ message, isLoading = false }: ChatMessageProps) {
-  const { role, content } = message
+  const { role, message: content } = message
   return (
-    <div className={cn("flex items-start gap-4 animate-in fade-in duration-500")}>
-        <ChatAvatar role={role} />
+    <div className={cn(
+        "flex items-start gap-4 animate-in fade-in duration-500",
+        role === 'user' && 'justify-end'
+    )}>
+        {role !== 'user' && <ChatAvatar role={role} />}
         <div className={cn(
-            "max-w-[85%] rounded-lg p-0.5 text-sm whitespace-pre-wrap flex-1"
+            "max-w-[85%] rounded-lg p-0.5 text-sm whitespace-pre-wrap flex-1",
+            role === 'user' ? 'bg-primary/10 p-3 rounded-xl' : ''
         )}>
-            <p className="font-bold mb-1">{role === 'user' ? 'You' : 'EdwinAI'}</p>
+            <p className={cn("font-bold mb-1", role === 'user' && "hidden")}>{role === 'user' ? 'You' : 'EdwinAI'}</p>
             {isLoading && role === 'assistant' ? (
                 <div className="flex items-center justify-start p-1 gap-1">
                     <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]"></div>
@@ -42,6 +46,7 @@ export function ChatMessage({ message, isLoading = false }: ChatMessageProps) {
                 <div className="prose prose-invert prose-p:my-0">{content}</div>
             )}
         </div>
+        {role === 'user' && <ChatAvatar role={role} />}
     </div>
   )
 }

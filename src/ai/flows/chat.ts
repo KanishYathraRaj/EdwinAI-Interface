@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 const messageSchema = z.object({
     role: z.enum(['user', 'assistant', 'system']),
-    content: z.string()
+    message: z.string()
 });
 
 export const continueConversation = ai.defineFlow(
@@ -24,7 +24,7 @@ export const continueConversation = ai.defineFlow(
             prompt: systemPrompt,
             history: history.map(m => ({
                 role: m.role === 'assistant' || m.role === 'system' ? 'model' : 'user',
-                content: m.content
+                content: m.message
             })),
             model: 'googleai/gemini-2.5-flash',
         });

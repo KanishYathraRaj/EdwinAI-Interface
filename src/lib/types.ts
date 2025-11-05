@@ -3,7 +3,7 @@ import type { Timestamp } from 'firebase/firestore';
 export interface Message {
   id: string;
   role: 'user' | 'assistant' | 'system';
-  content: string;
+  message: string;
   timestamp?: Timestamp | Date;
 }
 
@@ -25,9 +25,7 @@ export interface Subject {
   resources?: string[];
 }
 
-export interface Chat extends Subject {
-  messages: Message[];
-}
+export interface Chat extends Subject {}
 
 export interface UserProfile {
     id: string;
