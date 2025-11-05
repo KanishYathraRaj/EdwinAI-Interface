@@ -18,9 +18,9 @@ export function ChatLayout() {
 
   const subjectsQuery = useMemoFirebase(() => {
     if (!user) return null;
+    // Removed orderBy('createdAt', 'desc') to prevent query failure if field is missing
     return query(
-      collection(firestore, `users/${user.uid}/subjects`),
-      orderBy('createdAt', 'desc')
+      collection(firestore, `users/${user.uid}/subjects`)
     );
   }, [firestore, user]);
 
@@ -36,7 +36,14 @@ export function ChatLayout() {
 
   useEffect(() => {
     if (!activeChatId && subjects && subjects.length > 0) {
-      setActiveChatId(subjects[0].id);
+      // After removing orderBy from query, sort here to get the latest.
+      const sorted = [...subjects].sort((a, b) => {
+        const dateA = a.createdAt?.toDate() || 0;
+        const dateB = b.createdAt?.toDate() || 0;
+        if (!dateA || !dateB) return 0;
+        return dateB.getTime() - dateA.getTime();
+      });
+      setActiveChatId(sorted[0].id);
     }
   }, [subjects, activeChatId]);
 
