@@ -28,17 +28,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { NewSubjectDialog } from './new-subject-dialog';
 
 interface ChatSidebarProps {
   chats: Chat[];
   activeChatId: string | null;
-  onNewSubject: () => void;
+  onNewSubject: (title: string) => void;
   onSelectChat: (id: string) => void;
   onDeleteChat: (id: string) => void;
 }
 
 export default function ChatSidebar({ chats, activeChatId, onNewSubject, onSelectChat, onDeleteChat }: ChatSidebarProps) {
   const [deleteChatId, setDeleteChatId] = useState<string | null>(null);
+  const [isNewSubjectDialogOpen, setIsNewSubjectDialogOpen] = useState(false);
   const { state } = useSidebar();
   
   return (
@@ -62,7 +64,7 @@ export default function ChatSidebar({ chats, activeChatId, onNewSubject, onSelec
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={onNewSubject} className="w-full justify-start h-10 px-3 rounded-md bg-transparent hover:bg-sidebar-accent" tooltip="New subject">
+                <SidebarMenuButton onClick={() => setIsNewSubjectDialogOpen(true)} className="w-full justify-start h-10 px-3 rounded-md bg-transparent hover:bg-sidebar-accent" tooltip="New subject">
                     <Pencil size={18} />
                     <span className="group-data-[collapsible=icon]:hidden">New subject</span>
                 </SidebarMenuButton>
@@ -175,6 +177,15 @@ export default function ChatSidebar({ chats, activeChatId, onNewSubject, onSelec
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <NewSubjectDialog
+        open={isNewSubjectDialogOpen}
+        onOpenChange={setIsNewSubjectDialogOpen}
+        onSubjectCreate={(title) => {
+          onNewSubject(title);
+          setIsNewSubjectDialogOpen(false);
+        }}
+      />
     </>
   );
 }

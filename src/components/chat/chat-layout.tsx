@@ -11,9 +11,9 @@ export function ChatLayout() {
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
 
-  const addChat = () => {
+  const addChat = (title: string) => {
     const newChatId = crypto.randomUUID();
-    const newChat: Chat = { id: newChatId, title: 'New Subject', createdAt: new Date(), messages: [] };
+    const newChat: Chat = { id: newChatId, title: title || 'New Subject', createdAt: new Date(), messages: [] };
     setChats(prev => [newChat, ...prev]);
     setActiveChatId(newChatId);
   };
@@ -60,7 +60,7 @@ export function ChatLayout() {
           />
         </Sidebar>
         <SidebarInset className="bg-background">
-            <ChatComponent key={activeChatId} chat={activeChat} setChats={setChats} onNewChat={addChat} />
+            <ChatComponent key={activeChatId} chat={activeChat} setChats={setChats} onNewChat={() => addChat('New Subject')} />
         </SidebarInset>
       </SidebarProvider>
     </div>
