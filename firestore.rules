@@ -14,6 +14,24 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
+     * @description Enforces user-ownership for user profile documents.
+     * @path /users/{userId}
+     * @allow (get, update) User can read or update their own profile.
+     * @deny (list, create, delete) Users cannot list, create, or delete other user profiles directly.
+     */
+    match /users/{userId} {
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      allow get: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow delete: if false; // Generally, don't let users delete their own profile doc
+      allow list: if false; // Don't allow listing of all users
+    }
+
+    /**
      * @description Enforces user-ownership for chat sessions.
      * @path /users/{userId}/chatSessions/{chatSessionId}
      * @allow (create) User 'user123' can create a new chat session under their user ID.

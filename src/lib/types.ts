@@ -19,5 +19,11 @@ export interface ChatSession {
   id: string;
   title: string;
   createdAt: Timestamp;
-  messages: Message[];
+}
+
+export interface UserProfile {
+    id: string;
+    email: string;
+    displayName?: string;
+    photoURL?: string;
 }
