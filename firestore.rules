@@ -1,0 +1,70 @@
+/**
+ * @file Firestore Security Rules for Edwin Chat App
+ * @description This ruleset enforces a strict user-ownership model for chat sessions and messages, ensuring that users can only access their own data.
+ * @dataStructure All data is nested under /users/{userId}, creating a clear hierarchy of users, chat sessions, and messages.
+ * @keySecurityDecisions
+ *   - Users can only access their own chat sessions and messages.
+ *   - Listing other users' chat sessions is disallowed.
+ *   - Data schema is not strictly enforced during this prototyping phase.
+ * @denormalization No denormalization needed. The path-based ownership provides authorization independence.
+ * @structuralSegregation Private data is stored under each user's path. There is no public data.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Enforces user-ownership for chat sessions.
+     * @path /users/{userId}/chatSessions/{chatSessionId}
+     * @allow (create) User 'user123' can create a new chat session under their user ID.
+     * @allow (get) User 'user123' can read their own chat session.
+     * @allow (update) User 'user123' can update their own chat session.
+     * @allow (delete) User 'user123' can delete their own chat session.
+     * @deny (create) User 'user456' cannot create a chat session under 'user123'.
+     * @deny (get) User 'user456' cannot read 'user123' chat session.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId}/chatSessions/{chatSessionId} {
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return request.auth.uid == userId && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Enforces user-ownership for messages within chat sessions.
+     * @path /users/{userId}/chatSessions/{chatSessionId}/messages/{messageId}
+     * @allow (create) User 'user123' can create a new message in their chat session.
+     * @allow (get) User 'user123' can read a message in their chat session.
+     * @allow (update) User 'user123' can update a message in their chat session.
+     * @allow (delete) User 'user123' can delete a message in their chat session.
+     * @deny (create) User 'user456' cannot create a message in 'user123' chat session.
+     * @deny (get) User 'user456' cannot read a message in 'user123' chat session.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId}/chatSessions/{chatSessionId}/messages/{messageId} {
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return request.auth.uid == userId && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+}
