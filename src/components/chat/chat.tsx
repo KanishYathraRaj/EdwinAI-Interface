@@ -14,6 +14,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import SyllabusDisplay from './syllabus-display';
+import { cn } from '@/lib/utils';
 
 interface ChatProps {
   chat: Chat | undefined;
@@ -27,6 +28,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   const firestore = useFirestore();
   const [isSyllabusOpen, setIsSyllabusOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [activeTab, setActiveTab] = useState('research');
 
   useEffect(() => {
     if (chat?.conversation_history) {
@@ -89,23 +91,39 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     return <ChatWelcome onNewChat={onNewChat} />;
   }
 
+  const handleTabClick = (tab: string) => {
+    if (tab === 'syllabus') {
+      setIsSyllabusOpen(true);
+    } else {
+      setActiveTab(tab);
+    }
+  };
+
+  const navItems = ['Research', 'Documentation', 'Syllabus', 'Question Bank', 'Students'];
+
   return (
     <div className="flex flex-col h-full items-center">
       <div className="flex items-center justify-between w-full h-14 px-4 border-b shrink-0">
           <div className="flex items-center gap-2">
             <SidebarTrigger className="md:hidden"/>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-semibold text-foreground flex items-center gap-1">{chat.subject_name}</h1>
+            <div className="flex items-center gap-4">
+              {navItems.map((item) => (
+                <Button
+                  key={item}
+                  variant="ghost"
+                  onClick={() => handleTabClick(item.toLowerCase().replace(' ', '-'))}
+                  className={cn(
+                    "text-sm font-medium text-muted-foreground hover:text-foreground",
+                    activeTab === item.toLowerCase().replace(' ', '-') && "text-foreground"
+                  )}
+                >
+                  {item}
+                </Button>
+              ))}
             </div>
           </div>
           {chat.syllabus && (
             <Dialog open={isSyllabusOpen} onOpenChange={setIsSyllabusOpen}>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <BookOpen size={18} />
-                  <span className="sr-only">View Syllabus</span>
-                </Button>
-              </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>{chat.syllabus.course_title}</DialogTitle>
