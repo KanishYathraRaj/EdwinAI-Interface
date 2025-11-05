@@ -32,7 +32,7 @@ export function ChatMessage({ message, isLoading = false }: ChatMessageProps) {
     )}>
         {role !== 'user' && <ChatAvatar role={role} />}
         <div className={cn(
-            "max-w-[85%] rounded-lg p-0.5 text-sm whitespace-pre-wrap flex-1",
+            "max-w-[85%] rounded-lg p-0.5 text-sm whitespace-pre-wrap",
             role === 'user' ? 'bg-primary/10 p-3 rounded-xl' : ''
         )}>
             <p className={cn("font-bold mb-1", role === 'user' && "hidden")}>{role === 'user' ? 'You' : 'EdwinAI'}</p>
