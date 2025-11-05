@@ -7,10 +7,13 @@ import { ChatMessages } from '@/components/chat/chat-messages';
 import { ChatInput } from '@/components/chat/chat-input';
 import { useToast } from '@/hooks/use-toast';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { ChevronDown } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import { ChatWelcome } from './chat-welcome';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { Button } from '../ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import SyllabusDisplay from './syllabus-display';
 
 interface ChatProps {
   chat: Chat | undefined;
@@ -22,6 +25,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
+  const [isSyllabusOpen, setIsSyllabusOpen] = useState(false);
 
   const messagesQuery = useMemoFirebase(() => {
     if (!user || !chat?.id) return null;
@@ -85,9 +89,25 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
           <div className="flex items-center gap-2">
             <SidebarTrigger className="md:hidden"/>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-semibold text-foreground flex items-center gap-1">EdwinAI <ChevronDown size={16}/></h1>
+              <h1 className="text-lg font-semibold text-foreground flex items-center gap-1">{chat.subject_name}</h1>
             </div>
           </div>
+          {chat.syllabus && (
+            <Dialog open={isSyllabusOpen} onOpenChange={setIsSyllabusOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <BookOpen size={18} />
+                  <span className="sr-only">View Syllabus</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>{chat.syllabus.course_title}</DialogTitle>
+                </DialogHeader>
+                <SyllabusDisplay syllabus={chat.syllabus} />
+              </DialogContent>
+            </Dialog>
+          )}
       </div>
       <div className="flex-1 overflow-y-auto w-full max-w-4xl">
         <ChatMessages messages={messages || []} isLoading={isLoading || messagesLoading} />

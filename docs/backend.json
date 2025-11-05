@@ -43,7 +43,34 @@
         },
         "syllabus": {
           "type": "object",
-          "description": "A JSON object representing the syllabus for the subject."
+          "description": "A JSON object representing the syllabus for the subject.",
+          "properties": {
+            "course_title": {
+              "type": "string"
+            },
+            "units": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "unit_number": {
+                    "type": "string"
+                  },
+                  "unit_title": {
+                    "type": "string"
+                  },
+                  "topics": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": ["unit_number", "unit_title", "topics"]
+              }
+            }
+          },
+          "required": ["course_title", "units"]
         },
         "resources": {
           "type": "array",

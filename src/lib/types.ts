@@ -7,18 +7,26 @@ export interface Message {
   timestamp?: Timestamp | Date;
 }
 
-export interface Chat extends Subject {
-  messages: Message[];
+export interface Syllabus {
+  course_title: string;
+  units: {
+    unit_number: string;
+    unit_title: string;
+    topics: string[];
+  }[];
 }
-
 
 export interface Subject {
   id:string;
   subject_name: string;
   createdAt?: Timestamp;
   conversation_history?: Message[];
-  syllabus?: Record<string, any>;
+  syllabus?: Syllabus;
   resources?: string[];
+}
+
+export interface Chat extends Subject {
+  messages: Message[];
 }
 
 export interface UserProfile {
