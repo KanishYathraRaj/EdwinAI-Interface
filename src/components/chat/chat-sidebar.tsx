@@ -47,7 +47,7 @@ export default function ChatSidebar({ chats, activeChatId, onNewSubject, onSelec
         <div className="flex items-center justify-between w-full">
             <div className={cn("flex items-center gap-2 text-sidebar-foreground", state === 'collapsed' && "hidden")}>
                 <IconLogo className="size-6" />
-                <span className="text-lg font-semibold">ChatGPT</span>
+                <span className="text-lg font-semibold">EdwinAI</span>
             </div>
             <SidebarTrigger className={cn("size-7 opacity-0 group-hover:opacity-100", state === 'collapsed' ? 'absolute left-1/2 top-3 -translate-x-1/2 opacity-100' : '')} />
         </div>

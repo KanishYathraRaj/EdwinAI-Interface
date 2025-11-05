@@ -55,7 +55,7 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
             {...register('content')}
             ref={textareaRef}
             onKeyDown={handleKeyDown}
-            placeholder="Message ChatGPT..."
+            placeholder="Message EdwinAI..."
             className="resize-none pr-12 py-3 max-h-48 rounded-2xl border-sidebar-border focus-visible:ring-0 focus-visible:border-sidebar-border/50 transition-all"
             rows={1}
             disabled={isLoading}
@@ -70,7 +70,7 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
             <ArrowUp size={18} />
             </Button>
         </div>
-        <p className="text-center text-xs text-muted-foreground/50 mt-2">ChatGPT can make mistakes. Consider checking important information.</p>
+        <p className="text-center text-xs text-muted-foreground/50 mt-2">EdwinAI can make mistakes. Consider checking important information.</p>
     </div>
   );
 }

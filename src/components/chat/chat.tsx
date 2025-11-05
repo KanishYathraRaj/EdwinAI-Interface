@@ -57,7 +57,7 @@ export default function ChatComponent({ chat, setChats, onNewChat }: ChatProps) 
           <div className="flex items-center gap-2">
             <SidebarTrigger className="md:hidden"/>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-semibold text-foreground flex items-center gap-1">ChatGPT <ChevronDown size={16}/></h1>
+              <h1 className="text-lg font-semibold text-foreground flex items-center gap-1">EdwinAI <ChevronDown size={16}/></h1>
             </div>
           </div>
       </div>

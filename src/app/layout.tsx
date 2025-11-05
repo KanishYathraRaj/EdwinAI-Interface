@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Edwin',
+  title: 'EdwinAI',
   description: 'An AI chatbot powered by Genkit',
 };
 
