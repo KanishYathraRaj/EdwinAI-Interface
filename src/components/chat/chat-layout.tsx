@@ -13,7 +13,7 @@ export function ChatLayout() {
 
   const addChat = () => {
     const newChatId = crypto.randomUUID();
-    const newChat: Chat = { id: newChatId, title: 'New Chat', createdAt: new Date(), messages: [] };
+    const newChat: Chat = { id: newChatId, title: 'New Subject', createdAt: new Date(), messages: [] };
     setChats(prev => [newChat, ...prev]);
     setActiveChatId(newChatId);
   };
@@ -36,7 +36,7 @@ export function ChatLayout() {
   const activeChat = chats.find(chat => chat.id === activeChatId);
 
   useEffect(() => {
-    if (activeChat && activeChat.messages.length > 1 && activeChat.title === 'New Chat') {
+    if (activeChat && activeChat.messages.length > 1 && activeChat.title === 'New Subject') {
       const history = activeChat.messages.map(m => `${m.role}: ${m.content}`).join('\n');
       summarizeChatHistory({ chatHistory: history })
         .then(summary => {
@@ -54,7 +54,7 @@ export function ChatLayout() {
           <ChatSidebar 
             chats={chats.sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime())}
             activeChatId={activeChatId}
-            onNewChat={addChat}
+            onNewSubject={addChat}
             onSelectChat={setActiveChatId}
             onDeleteChat={deleteChat}
           />

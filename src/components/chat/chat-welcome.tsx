@@ -17,7 +17,7 @@ export function ChatWelcome({ onNewChat }: ChatWelcomeProps) {
         <h1 className="text-2xl font-medium mb-2">How can I help you today?</h1>
         {onNewChat && (
           <Button onClick={onNewChat} variant="secondary" className="mt-4">
-            Start a new chat
+            Start a new subject
           </Button>
         )}
     </div>

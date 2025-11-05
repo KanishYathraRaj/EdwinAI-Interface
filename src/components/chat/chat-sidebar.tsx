@@ -32,12 +32,12 @@ import { cn } from '@/lib/utils';
 interface ChatSidebarProps {
   chats: Chat[];
   activeChatId: string | null;
-  onNewChat: () => void;
+  onNewSubject: () => void;
   onSelectChat: (id: string) => void;
   onDeleteChat: (id: string) => void;
 }
 
-export default function ChatSidebar({ chats, activeChatId, onNewChat, onSelectChat, onDeleteChat }: ChatSidebarProps) {
+export default function ChatSidebar({ chats, activeChatId, onNewSubject, onSelectChat, onDeleteChat }: ChatSidebarProps) {
   const [deleteChatId, setDeleteChatId] = useState<string | null>(null);
   const { state } = useSidebar();
   
@@ -62,9 +62,9 @@ export default function ChatSidebar({ chats, activeChatId, onNewChat, onSelectCh
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={onNewChat} className="w-full justify-start h-10 px-3 rounded-md bg-transparent hover:bg-sidebar-accent" tooltip="New chat">
+                <SidebarMenuButton onClick={onNewSubject} className="w-full justify-start h-10 px-3 rounded-md bg-transparent hover:bg-sidebar-accent" tooltip="New subject">
                     <Pencil size={18} />
-                    <span className="group-data-[collapsible=icon]:hidden">New chat</span>
+                    <span className="group-data-[collapsible=icon]:hidden">New subject</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
