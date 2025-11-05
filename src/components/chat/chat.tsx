@@ -7,14 +7,13 @@ import { ChatMessages } from '@/components/chat/chat-messages';
 import { ChatInput } from '@/components/chat/chat-input';
 import { useToast } from '@/hooks/use-toast';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { BookOpen } from 'lucide-react';
 import { ChatWelcome } from './chat-welcome';
 import { useUser, useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { Button } from '../ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import SyllabusDisplay from './syllabus-display';
 import { cn } from '@/lib/utils';
+import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 
 interface ChatProps {
   chat: Chat | undefined;
@@ -26,9 +25,8 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
-  const [isSyllabusOpen, setIsSyllabusOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [activeTab, setActiveTab] = useState('research');
+  const [activeView, setActiveView] = useState('research');
 
   useEffect(() => {
     if (chat?.conversation_history) {
@@ -36,6 +34,8 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     } else {
       setMessages([]);
     }
+    // When chat changes, default back to research view
+    setActiveView('research');
   }, [chat]);
 
   const handleSend = async (content: string) => {
@@ -92,11 +92,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   }
 
   const handleTabClick = (tab: string) => {
-    if (tab === 'syllabus') {
-      setIsSyllabusOpen(true);
-    } else {
-      setActiveTab(tab);
-    }
+    setActiveView(tab);
   };
 
   const navItems = ['Research', 'Documentation', 'Syllabus', 'Question Bank', 'Students'];
@@ -114,7 +110,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
                   onClick={() => handleTabClick(item.toLowerCase().replace(' ', '-'))}
                   className={cn(
                     "text-sm font-medium text-muted-foreground hover:text-foreground",
-                    activeTab === item.toLowerCase().replace(' ', '-') && "text-foreground"
+                    activeView === item.toLowerCase().replace(' ', '-') && "text-foreground"
                   )}
                 >
                   {item}
@@ -122,23 +118,38 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
               ))}
             </div>
           </div>
-          {chat.syllabus && (
-            <Dialog open={isSyllabusOpen} onOpenChange={setIsSyllabusOpen}>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>{chat.syllabus.course_title}</DialogTitle>
-                </DialogHeader>
-                <SyllabusDisplay syllabus={chat.syllabus} />
-              </DialogContent>
-            </Dialog>
-          )}
       </div>
-      <div className="flex-1 overflow-y-auto w-full max-w-4xl">
-        <ChatMessages messages={messages} isLoading={isLoading} />
-      </div>
-      <div className="w-full max-w-4xl pb-4">
-        <ChatInput onSend={handleSend} isLoading={isLoading} />
-      </div>
+
+      {activeView === 'research' && (
+        <>
+          <div className="flex-1 overflow-y-auto w-full max-w-4xl">
+            <ChatMessages messages={messages} isLoading={isLoading} />
+          </div>
+          <div className="w-full max-w-4xl pb-4">
+            <ChatInput onSend={handleSend} isLoading={isLoading} />
+          </div>
+        </>
+      )}
+
+      {activeView === 'syllabus' && chat.syllabus && (
+        <div className="flex-1 overflow-y-auto w-full max-w-4xl p-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>{chat.syllabus.course_title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <SyllabusDisplay syllabus={chat.syllabus} />
+                </CardContent>
+            </Card>
+        </div>
+      )}
+      
+      {activeView === 'syllabus' && !chat.syllabus && (
+          <div className="flex flex-1 items-center justify-center">
+              <p className="text-muted-foreground">No syllabus available for this subject.</p>
+          </div>
+      )}
+
     </div>
   );
 }
