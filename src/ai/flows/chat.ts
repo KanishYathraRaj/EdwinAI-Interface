@@ -4,7 +4,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
 const messageSchema = z.object({
-    role: z.enum(['user', 'assistant']),
+    role: z.enum(['user', 'assistant', 'system']),
     content: z.string()
 });
 
@@ -23,12 +23,12 @@ export const continueConversation = ai.defineFlow(
         const llmResponse = await ai.generate({
             prompt: systemPrompt,
             history: history.map(m => ({
-                role: m.role === 'assistant' ? 'model' : 'user',
+                role: m.role === 'assistant' || m.role === 'system' ? 'model' : 'user',
                 content: m.content
             })),
             model: 'googleai/gemini-2.5-flash',
         });
         
-        return llmResponse.text();
+        return llmResponse.text;
     }
 );

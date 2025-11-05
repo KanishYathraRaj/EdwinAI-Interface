@@ -9,8 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { BookOpen } from 'lucide-react';
 import { ChatWelcome } from './chat-welcome';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { useUser, useFirestore } from '@/firebase';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import SyllabusDisplay from './syllabus-display';
@@ -26,47 +26,51 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   const { user } = useUser();
   const firestore = useFirestore();
   const [isSyllabusOpen, setIsSyllabusOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
 
-  const messagesQuery = useMemoFirebase(() => {
-    if (!user || !chat?.id) return null;
-    return query(
-      collection(firestore, `users/${user.uid}/subjects/${chat.id}/messages`),
-      orderBy('timestamp', 'asc')
-    );
-  }, [firestore, user, chat?.id]);
-
-  const { data: messages, isLoading: messagesLoading } = useCollection<Message>(messagesQuery);
+  useEffect(() => {
+    if (chat?.conversation_history) {
+      setMessages(chat.conversation_history);
+    } else {
+      setMessages([]);
+    }
+  }, [chat]);
 
   const handleSend = async (content: string) => {
     if (!chat || !user) return;
 
-    const userMessage: Omit<Message, 'id'> = {
+    const userMessage: Message = {
+      id: `user-${Date.now()}`,
       role: 'user',
       content,
-      timestamp: serverTimestamp(),
     };
-    
+
+    const updatedHistory = [...messages, userMessage];
+    setMessages(updatedHistory);
     setIsLoading(true);
 
     try {
-      const messagesCol = collection(firestore, `users/${user.uid}/subjects/${chat.id}/messages`);
-      await addDoc(messagesCol, userMessage);
-      
-      const currentMessages = messages || [];
-      
       const responseContent = await continueConversation({
-        history: [...currentMessages, { ...userMessage, id: 'temp-id' }].map(m => ({
-          role: m.role === 'assistant' ? 'assistant' : 'user',
+        history: updatedHistory.map(m => ({
+          role: m.role,
           content: m.content
         }))
       });
 
-      const assistantMessage: Omit<Message, 'id'> = {
+      const assistantMessage: Message = {
+        id: `assistant-${Date.now()}`,
         role: 'assistant',
         content: responseContent,
-        timestamp: serverTimestamp(),
       };
-      await addDoc(messagesCol, assistantMessage);
+
+      const finalHistory = [...updatedHistory, assistantMessage];
+      setMessages(finalHistory);
+
+      const subjectDocRef = doc(firestore, `users/${user.uid}/subjects/${chat.id}`);
+      await updateDoc(subjectDocRef, {
+        conversation_history: finalHistory
+      });
+
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -74,6 +78,8 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
         description: "Failed to get a response from the AI. Please try again.",
         variant: "destructive",
       });
+      // Revert to previous history on error
+      setMessages(messages);
     } finally {
       setIsLoading(false);
     }
@@ -110,7 +116,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
           )}
       </div>
       <div className="flex-1 overflow-y-auto w-full max-w-4xl">
-        <ChatMessages messages={messages || []} isLoading={isLoading || messagesLoading} />
+        <ChatMessages messages={messages} isLoading={isLoading} />
       </div>
       <div className="w-full max-w-4xl pb-4">
         <ChatInput onSend={handleSend} isLoading={isLoading} />

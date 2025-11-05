@@ -16,7 +16,6 @@
       ]
     },
     "Subject": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Subject",
       "type": "object",
       "description": "Represents a single subject session, containing messages and metadata.",
@@ -38,7 +37,7 @@
           "type": "array",
           "description": "A history of the conversation.",
           "items": {
-            "$ref": "#/backend/entities/Message"
+            "$ref": "#/entities/Message"
           }
         },
         "syllabus": {
@@ -86,7 +85,6 @@
       ]
     },
     "Message": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Message",
       "type": "object",
       "description": "Represents a single message within a conversation history.",
@@ -94,7 +92,7 @@
         "role": {
           "type": "string",
           "description": "Indicates who sent the message.",
-          "enum": ["user", "assistant"]
+          "enum": ["user", "assistant", "system"]
         },
         "content": {
           "type": "string",
@@ -147,30 +145,6 @@
             {
               "name": "subjectId",
               "description": "The unique identifier for the subject session."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/subjects/{subjectId}/messages/{messageId}",
-        "definition": {
-          "entityName": "Message",
-          "schema": {
-            "$ref": "#/backend/entities/Message"
-          },
-          "description": "Stores messages within a specific subject session for a user. This collection is used for real-time chat. The full history is also stored in the 'conversation_history' field of the parent Subject document.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user."
-            },
-            {
-              "name": "subjectId",
-              "description": "The unique identifier for the subject session."
-            },
-            {
-              "name": "messageId",
-              "description": "The unique identifier for the message."
             }
           ]
         }
