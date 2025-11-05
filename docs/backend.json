@@ -1,5 +1,20 @@
 {
   "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "type": "object",
+      "description": "Represents a user's profile information.",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        }
+      },
+      "required": [
+        "email"
+      ]
+    },
     "Subject": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Subject",
@@ -23,6 +38,24 @@
           "type": "string",
           "description": "Timestamp indicating when the subject session ended (or last updated).",
           "format": "date-time"
+        },
+        "conversationHistory": {
+          "type": "array",
+          "description": "A history of the conversation.",
+          "items": {
+            "$ref": "#/backend/entities/Message"
+          }
+        },
+        "syllabus": {
+          "type": "string",
+          "description": "A URL or reference to the syllabus file."
+        },
+        "resources": {
+          "type": "array",
+          "description": "A list of resources for the subject.",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [
@@ -76,6 +109,22 @@
   },
   "firestore": {
     "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profile information.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
       {
         "path": "/users/{userId}/subjects/{subjectId}",
         "definition": {

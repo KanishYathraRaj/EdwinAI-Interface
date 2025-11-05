@@ -19,6 +19,9 @@ export interface Subject {
   id: string;
   title: string;
   createdAt: Timestamp;
+  conversationHistory?: Message[];
+  syllabus?: string;
+  resources?: string[];
 }
 
 export interface UserProfile {
