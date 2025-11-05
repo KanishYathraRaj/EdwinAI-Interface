@@ -7,7 +7,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 interface SyllabusDisplayProps {
   syllabus: Syllabus;
@@ -20,10 +22,10 @@ export default function SyllabusDisplay({ syllabus }: SyllabusDisplayProps) {
 
   return (
     <Card className="w-full border-0 shadow-none">
-      <CardContent className="p-0 pt-4">
-        <Accordion type="single" collapsible defaultValue="item-0">
+      <CardContent className="p-0 pt-4 max-h-[60vh] overflow-y-auto">
+        <Accordion type="multiple" defaultValue={syllabus.units.map((u, i) => `item-${i}`)}>
           {syllabus.units.map((unit, index) => (
-            <AccordionItem value={`item-${index}`} key={unit.unit_number}>
+            <AccordionItem value={`item-${index}`} key={unit.unit_number} className="border-b-0">
               <AccordionTrigger>
                 <div className="flex items-center gap-4">
                   <span className="text-sm font-semibold text-muted-foreground">
@@ -33,10 +35,13 @@ export default function SyllabusDisplay({ syllabus }: SyllabusDisplayProps) {
                 </div>
               </AccordionTrigger>
               <AccordionContent>
-                <ul className="list-disc space-y-2 pl-10 pr-4 py-2">
+                <ul className="space-y-3 pl-6 pr-4 py-2">
                   {unit.topics.map((topic) => (
-                    <li key={topic} className="text-sm text-muted-foreground">
-                      {topic}
+                    <li key={topic} className="flex items-center gap-3">
+                      <Checkbox id={topic} />
+                      <Label htmlFor={topic} className="text-sm font-normal text-muted-foreground">
+                        {topic}
+                      </Label>
                     </li>
                   ))}
                 </ul>
