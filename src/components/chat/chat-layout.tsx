@@ -44,7 +44,7 @@ export function ChatLayout() {
     if (!user) return;
     try {
       const docRef = await addDoc(collection(firestore, `users/${user.uid}/subjects`), {
-        title: title || 'New Subject',
+        subject_name: title || 'New Subject',
         createdAt: serverTimestamp(),
       });
       setActiveChatId(docRef.id);
@@ -73,13 +73,13 @@ export function ChatLayout() {
   const activeChat = useMemo(() => subjects?.find(chat => chat.id === activeChatId), [subjects, activeChatId]);
 
   useEffect(() => {
-    if (activeChat && (activeChat as Chat).messages && (activeChat as Chat).messages.length > 1 && activeChat.title === 'New Subject') {
+    if (activeChat && (activeChat as Chat).messages && (activeChat as Chat).messages.length > 1 && activeChat.subject_name === 'New Subject') {
       const history = (activeChat as Chat).messages.map(m => `${m.role}: ${m.content}`).join('\n');
       summarizeChatHistory({ chatHistory: history })
         .then(summary => {
           if (user && activeChat.id) {
             const chatDocRef = doc(firestore, `users/${user.uid}/subjects`, activeChat.id);
-            updateDoc(chatDocRef, { title: summary.summary });
+            updateDoc(chatDocRef, { subject_name: summary.summary });
           }
         })
         .catch(console.error);

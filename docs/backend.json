@@ -25,21 +25,16 @@
           "type": "string",
           "description": "Unique identifier for the subject session."
         },
-        "title": {
+        "subject_name": {
           "type": "string",
-          "description": "Title or summary of the subject session."
+          "description": "The name or title of the subject."
         },
-        "startTime": {
+        "createdAt": {
           "type": "string",
-          "description": "Timestamp indicating when the subject session started.",
+          "description": "Timestamp indicating when the subject session was created.",
           "format": "date-time"
         },
-        "endTime": {
-          "type": "string",
-          "description": "Timestamp indicating when the subject session ended (or last updated).",
-          "format": "date-time"
-        },
-        "conversationHistory": {
+        "conversation_history": {
           "type": "array",
           "description": "A history of the conversation.",
           "items": {
@@ -47,8 +42,8 @@
           }
         },
         "syllabus": {
-          "type": "string",
-          "description": "A URL or reference to the syllabus file."
+          "type": "object",
+          "description": "A JSON object representing the syllabus for the subject."
         },
         "resources": {
           "type": "array",
@@ -60,44 +55,28 @@
       },
       "required": [
         "id",
-        "title",
-        "startTime"
+        "subject_name"
       ]
     },
     "Message": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Message",
       "type": "object",
-      "description": "Represents a single message within a subject session.",
+      "description": "Represents a single message within a conversation history.",
       "properties": {
-        "id": {
+        "role": {
           "type": "string",
-          "description": "Unique identifier for the message."
-        },
-        "subjectId": {
-          "type": "string",
-          "description": "Reference to Subject. (Relationship: Subject 1:N Message)"
-        },
-        "sender": {
-          "type": "string",
-          "description": "Indicates who sent the message (e.g., 'user' or 'bot')."
+          "description": "Indicates who sent the message.",
+          "enum": ["user", "assistant"]
         },
         "content": {
           "type": "string",
           "description": "The text content of the message."
-        },
-        "timestamp": {
-          "type": "string",
-          "description": "Timestamp indicating when the message was sent.",
-          "format": "date-time"
         }
       },
       "required": [
-        "id",
-        "subjectId",
-        "sender",
-        "content",
-        "timestamp"
+        "role",
+        "content"
       ]
     }
   },
@@ -152,7 +131,7 @@
           "schema": {
             "$ref": "#/backend/entities/Message"
           },
-          "description": "Stores messages within a specific subject session for a user. Path-based ownership ensures users can only access messages within their subject sessions.",
+          "description": "Stores messages within a specific subject session for a user. This collection is used for real-time chat. The full history is also stored in the 'conversation_history' field of the parent Subject document.",
           "params": [
             {
               "name": "userId",

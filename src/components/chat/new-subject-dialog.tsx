@@ -26,7 +26,7 @@ export function NewSubjectDialog({ open, onOpenChange, onSubjectCreate }: NewSub
   const [fileName, setFileName] = useState('');
 
   const handleCreateSubject = () => {
-    onSubjectCreate(title);
+    onSubjectCreate(title || 'New Subject');
     setTitle('');
     setFileName('');
   };

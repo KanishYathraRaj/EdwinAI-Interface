@@ -106,9 +106,9 @@ export default function ChatSidebar({ chats, activeChatId, onNewSubject, onSelec
                             onClick={() => onSelectChat(chat.id)}
                             isActive={chat.id === activeChatId}
                             className="h-10 justify-start rounded-md bg-transparent hover:bg-sidebar-accent data-[active=true]:bg-sidebar-accent w-full"
-                            tooltip={chat.title}
+                            tooltip={chat.subject_name}
                         >
-                            <span className="truncate max-w-48 group-data-[collapsible=icon]:hidden">{chat.title}</span>
+                            <span className="truncate max-w-48 group-data-[collapsible=icon]:hidden">{chat.subject_name}</span>
                         </SidebarMenuButton>
                         <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/item:opacity-100 transition-opacity group-data-[collapsible=icon]:hidden">
                           <DropdownMenu>
