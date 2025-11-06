@@ -41,35 +41,13 @@
           }
         },
         "syllabus": {
-          "type": "object",
-          "description": "A JSON object representing the syllabus for the subject.",
-          "properties": {
-            "course_title": {
-              "type": "string"
-            },
-            "units": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "unit_number": {
-                    "type": "string"
-                  },
-                  "unit_title": {
-                    "type": "string"
-                  },
-                  "topics": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  }
-                },
-                "required": ["unit_number", "unit_title", "topics"]
-              }
-            }
-          },
-          "required": ["course_title", "units"]
+          "$ref": "#/entities/Syllabus"
+        },
+        "question_bank": {
+          "$ref": "#/entities/QuestionBank"
+        },
+        "documentation": {
+          "$ref": "#/entities/Documentation"
         },
         "resources": {
           "type": "array",
@@ -103,6 +81,141 @@
         "role",
         "content"
       ]
+    },
+    "Syllabus": {
+      "title": "Syllabus",
+      "type": "object",
+      "description": "A JSON object representing the syllabus for the subject.",
+      "properties": {
+        "course_title": {
+          "type": "string"
+        },
+        "units": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "unit_number": {
+                "type": "string"
+              },
+              "unit_title": {
+                "type": "string"
+              },
+              "topics": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": ["unit_number", "unit_title", "topics"]
+          }
+        }
+      },
+      "required": ["course_title", "units"]
+    },
+    "QuestionBank": {
+      "title": "Question Bank",
+      "type": "object",
+      "description": "A JSON object representing a question bank for the subject.",
+      "properties": {
+        "course_title": {
+          "type": "string"
+        },
+        "units": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "unit_number": {
+                "type": "string"
+              },
+              "unit_title": {
+                "type": "string"
+              },
+              "2_marks": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "16_marks": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": ["unit_number", "unit_title", "2_marks", "16_marks"]
+          }
+        }
+      },
+      "required": ["course_title", "units"]
+    },
+    "Documentation": {
+      "title": "Documentation",
+      "type": "object",
+      "description": "A comprehensive documentation object for the subject.",
+      "properties": {
+        "course_title": {
+          "type": "string"
+        },
+        "overview": {
+          "type": "string"
+        },
+        "final_summary": {
+          "type": "string"
+        },
+        "units": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "unit_number": {
+                "type": "string"
+              },
+              "unit_title": {
+                "type": "string"
+              },
+              "unit_summary": {
+                "type": "string"
+              },
+              "topics": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "topic_title": {
+                      "type": "string"
+                    },
+                    "summary": {
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "type": "string"
+                    },
+                    "examples": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "real_world_applications": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": ["topic_title", "summary", "explanation", "examples", "real_world_applications"]
+                }
+              }
+            },
+            "required": ["unit_number", "unit_title", "unit_summary", "topics"]
+          }
+        }
+      },
+      "required": ["course_title", "overview", "final_summary", "units"]
     }
   },
   "auth": {

@@ -12,6 +12,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { Button } from '../ui/button';
 import SyllabusDisplay from './syllabus-display';
 import QuestionBankDisplay from './question-bank-display';
+import DocumentationDisplay from './documentation-display';
 import { cn } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 
@@ -147,7 +148,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   const navItems = ['Research', 'Documentation', 'Syllabus', 'Question Bank', 'Students'];
 
   return (
-    <div className="flex flex-col h-full items-center">
+    <div className="flex flex-col h-full">
       <div className="flex items-center justify-between w-full h-14 px-4 border-b shrink-0">
           <div className="flex items-center gap-2">
             <SidebarTrigger className="md:hidden"/>
@@ -168,60 +169,80 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
             </div>
           </div>
       </div>
+      <div className="flex-1 overflow-y-auto">
+        <div className="w-full h-full max-w-4xl mx-auto">
+            {activeView === 'research' && (
+                <div className="flex flex-col h-full">
+                    <div className="flex-1">
+                        <ChatMessages messages={messages} isLoading={isLoading} />
+                    </div>
+                    <div className="pb-4">
+                        <ChatInput onSend={handleSend} isLoading={isLoading} />
+                    </div>
+                </div>
+            )}
 
-      {activeView === 'research' && (
-        <>
-          <div className="flex-1 overflow-y-auto w-full max-w-4xl">
-            <ChatMessages messages={messages} isLoading={isLoading} />
-          </div>
-          <div className="w-full max-w-4xl pb-4">
-            <ChatInput onSend={handleSend} isLoading={isLoading} />
-          </div>
-        </>
-      )}
+            {activeView === 'documentation' && (
+                <div className="p-4">
+                    {chat.documentation ? (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>{chat.documentation.course_title}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <DocumentationDisplay documentation={chat.documentation} />
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <div className="flex items-center justify-center h-full pt-20">
+                            <p className="text-muted-foreground">No documentation available for this subject.</p>
+                        </div>
+                    )}
+                </div>
+            )}
 
-      {activeView === 'syllabus' && chat.syllabus && (
-        <div className="flex-1 overflow-y-auto w-full max-w-4xl p-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>{chat.syllabus.course_title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <SyllabusDisplay syllabus={chat.syllabus} />
-                </CardContent>
-            </Card>
+            {activeView === 'syllabus' && (
+                <div className="p-4">
+                {chat.syllabus ? (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{chat.syllabus.course_title}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <SyllabusDisplay syllabus={chat.syllabus} />
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="flex items-center justify-center h-full pt-20">
+                        <p className="text-muted-foreground">No syllabus available for this subject.</p>
+                    </div>
+                )}
+                </div>
+            )}
+            
+            {activeView === 'question-bank' && (
+                <div className="p-4">
+                {chat.question_bank ? (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{chat.question_bank.course_title}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <QuestionBankDisplay questionBank={chat.question_bank} />
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-full pt-20 text-center">
+                        <p className="text-muted-foreground mb-4">No question bank available for this subject.</p>
+                        <Button onClick={handleGenerateQuestionBank} disabled={isGenerating}>
+                            {isGenerating ? 'Generating...' : 'Generate Question Bank'}
+                        </Button>
+                    </div>
+                )}
+                </div>
+            )}
         </div>
-      )}
-      
-      {activeView === 'syllabus' && !chat.syllabus && (
-          <div className="flex flex-1 items-center justify-center">
-              <p className="text-muted-foreground">No syllabus available for this subject.</p>
-          </div>
-      )}
-
-      {activeView === 'question-bank' && chat.question_bank && (
-        <div className="flex-1 overflow-y-auto w-full max-w-4xl p-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>{chat.question_bank.course_title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <QuestionBankDisplay questionBank={chat.question_bank} />
-                </CardContent>
-            </Card>
-        </div>
-      )}
-
-      {activeView === 'question-bank' && !chat.question_bank && (
-        <div className="flex flex-1 items-center justify-center text-center">
-            <div>
-                <p className="text-muted-foreground mb-4">No question bank available for this subject.</p>
-                <Button onClick={handleGenerateQuestionBank} disabled={isGenerating}>
-                    {isGenerating ? 'Generating...' : 'Generate Question Bank'}
-                </Button>
-            </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
