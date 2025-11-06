@@ -24,6 +24,7 @@ interface ChatProps {
 export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingDocs, setIsGeneratingDocs] = useState(false);
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
@@ -44,7 +45,6 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     if (!chat || !user) return;
   
     const userMessage: Message = {
-      id: `user-${Date.now()}`,
       role: 'user',
       content: content,
     };
@@ -76,7 +76,6 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
       const responseData = await response.json();
       
       const assistantMessage: Message = {
-          id: `assistant-${Date.now()}`,
           role: 'assistant',
           content: responseData.response,
       };
@@ -134,6 +133,45 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
       });
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleGenerateDocumentation = async () => {
+    if (!chat || !user) return;
+
+    setIsGeneratingDocs(true);
+    try {
+      const response = await fetch('http://127.0.0.1:5000/generate_documentation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: user.uid,
+          subject_id: chat.id,
+          user_subject_json: chat,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'API call failed');
+      }
+
+      toast({
+        title: "Documentation Generation Started",
+        description: "The documentation is being generated and will appear here shortly.",
+      });
+
+    } catch (error: any) {
+      console.error('Error generating documentation:', error);
+      toast({
+        title: 'Error Generating Documentation',
+        description: error.message || 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGeneratingDocs(false);
     }
   };
   
@@ -194,8 +232,11 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
                             </CardContent>
                         </Card>
                     ) : (
-                        <div className="flex items-center justify-center h-full pt-20">
-                            <p className="text-muted-foreground">No documentation available for this subject.</p>
+                        <div className="flex flex-col items-center justify-center h-full pt-20 text-center">
+                            <p className="text-muted-foreground mb-4">No documentation available for this subject.</p>
+                             <Button onClick={handleGenerateDocumentation} disabled={isGeneratingDocs}>
+                                {isGeneratingDocs ? 'Generating...' : 'Generate Documentation'}
+                            </Button>
                         </div>
                     )}
                 </div>
