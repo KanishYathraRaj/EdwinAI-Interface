@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import type { Chat, Message } from '@/lib/types';
-import { continueConversation } from '@/ai/flows/chat';
 import { ChatMessages } from '@/components/chat/chat-messages';
 import { ChatInput } from '@/components/chat/chat-input';
 import { useToast } from '@/hooks/use-toast';
@@ -40,47 +39,62 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
 
   const handleSend = async (content: string) => {
     if (!chat || !user) return;
-
+  
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       role: 'user',
       message: content,
     };
-
-    const updatedHistory = [...messages, userMessage];
-    setMessages(updatedHistory);
+  
+    // Optimistically update the UI with the user's message
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setIsLoading(true);
-
+  
     try {
-      const responseContent = await continueConversation({
-        history: updatedHistory.map(m => ({
-          role: m.role,
-          message: m.message
-        }))
+      const response = await fetch('http://127.0.0.1:5000/ask', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: user.uid,
+          subject_id: chat.id,
+          user_query: content,
+          user_subject_json: chat,
+        }),
       });
-
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'API call failed');
+      }
+  
+      const responseData = await response.json();
+      
+      // Assuming the API returns the assistant's message
       const assistantMessage: Message = {
-        id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        message: responseContent,
+          id: `assistant-${Date.now()}`,
+          role: 'assistant',
+          message: responseData.response, // Or whatever key the response is under
       };
 
-      const finalHistory = [...updatedHistory, assistantMessage];
-      setMessages(finalHistory);
+      // Since the backend now handles DB updates, we might need to refetch
+      // or just append the response. For now, we append.
+      const finalMessages = [...updatedMessages, assistantMessage];
+      setMessages(finalMessages);
 
-      const subjectDocRef = doc(firestore, `users/${user.uid}/subjects/${chat.id}`);
-      await updateDoc(subjectDocRef, {
-        conversation_history: finalHistory
-      });
+      // The Flask API is expected to update the document in Firestore.
+      // The client no longer needs to do it.
 
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
-        title: "An error occurred",
-        description: "Failed to get a response from the AI. Please try again.",
-        variant: "destructive",
+        title: 'An error occurred',
+        description: 'Failed to get a response from the AI. Please try again.',
+        variant: 'destructive',
       });
-      // Revert to previous history on error
+      // Revert to previous messages on error
       setMessages(messages);
     } finally {
       setIsLoading(false);
