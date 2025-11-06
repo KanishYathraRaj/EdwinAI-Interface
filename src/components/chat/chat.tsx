@@ -22,6 +22,7 @@ interface ChatProps {
 
 export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
@@ -73,20 +74,14 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   
       const responseData = await response.json();
       
-      // Assuming the API returns the assistant's message
       const assistantMessage: Message = {
           id: `assistant-${Date.now()}`,
           role: 'assistant',
-          content: responseData.response, // Or whatever key the response is under
+          content: responseData.response,
       };
 
-      // Since the backend now handles DB updates, we might need to refetch
-      // or just append the response. For now, we append.
       const finalMessages = [...updatedMessages, assistantMessage];
       setMessages(finalMessages);
-
-      // The Flask API is expected to update the document in Firestore.
-      // The client no longer needs to do it.
 
     } catch (error) {
       console.error('Error sending message:', error);
@@ -99,6 +94,45 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
       setMessages(messages);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGenerateQuestionBank = async () => {
+    if (!chat || !user) return;
+
+    setIsGenerating(true);
+    try {
+      const response = await fetch('http://127.0.0.1:5000/generate_question_bank', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: user.uid,
+          subject_id: chat.id,
+          user_subject_json: chat,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'API call failed');
+      }
+      
+      toast({
+        title: "Question Bank Generation Started",
+        description: "The question bank is being generated and will appear here shortly.",
+      });
+
+    } catch (error: any) {
+      console.error('Error generating question bank:', error);
+      toast({
+        title: 'Error Generating Question Bank',
+        description: error.message || 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGenerating(false);
     }
   };
   
@@ -179,9 +213,14 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
       )}
 
       {activeView === 'question-bank' && !chat.question_bank && (
-          <div className="flex flex-1 items-center justify-center">
-              <p className="text-muted-foreground">No question bank available for this subject.</p>
-          </div>
+        <div className="flex flex-1 items-center justify-center text-center">
+            <div>
+                <p className="text-muted-foreground mb-4">No question bank available for this subject.</p>
+                <Button onClick={handleGenerateQuestionBank} disabled={isGenerating}>
+                    {isGenerating ? 'Generating...' : 'Generate Question Bank'}
+                </Button>
+            </div>
+        </div>
       )}
     </div>
   );
