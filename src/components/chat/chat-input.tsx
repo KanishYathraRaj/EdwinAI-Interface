@@ -16,14 +16,21 @@ type FormData = {
 };
 
 export function ChatInput({ onSend, isLoading }: ChatInputProps) {
-  const { register, handleSubmit, reset, watch } = useForm<FormData>();
+  const { register, handleSubmit, reset, watch } = useForm<FormData>({
+    defaultValues: {
+      content: ''
+    }
+  });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const content = watch('content');
 
   const onSubmit: SubmitHandler<FormData> = (data) => {
     if (!data.content || !data.content.trim() || isLoading) return;
     onSend(data.content.trim());
-    reset();
+    reset({ content: '' });
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
   };
   
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
