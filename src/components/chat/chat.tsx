@@ -11,6 +11,7 @@ import { useUser, useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { Button } from '../ui/button';
 import SyllabusDisplay from './syllabus-display';
+import QuestionBankDisplay from './question-bank-display';
 import { cn } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 
@@ -43,7 +44,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       role: 'user',
-      message: content,
+      content: content,
     };
   
     // Optimistically update the UI with the user's message
@@ -76,7 +77,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
       const assistantMessage: Message = {
           id: `assistant-${Date.now()}`,
           role: 'assistant',
-          message: responseData.response, // Or whatever key the response is under
+          content: responseData.response, // Or whatever key the response is under
       };
 
       // Since the backend now handles DB updates, we might need to refetch
@@ -164,6 +165,24 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
           </div>
       )}
 
+      {activeView === 'question-bank' && chat.question_bank && (
+        <div className="flex-1 overflow-y-auto w-full max-w-4xl p-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>{chat.question_bank.course_title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <QuestionBankDisplay questionBank={chat.question_bank} />
+                </CardContent>
+            </Card>
+        </div>
+      )}
+
+      {activeView === 'question-bank' && !chat.question_bank && (
+          <div className="flex flex-1 items-center justify-center">
+              <p className="text-muted-foreground">No question bank available for this subject.</p>
+          </div>
+      )}
     </div>
   );
 }

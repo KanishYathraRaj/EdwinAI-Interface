@@ -3,7 +3,7 @@ import type { Timestamp } from 'firebase/firestore';
 export interface Message {
   id: string;
   role: 'user' | 'assistant' | 'system';
-  message: string;
+  content: string;
   timestamp?: Timestamp | Date;
 }
 
@@ -16,12 +16,25 @@ export interface Syllabus {
   }[];
 }
 
+export interface QuestionUnit {
+  unit_number: string;
+  unit_title: string;
+  '2_marks': string[];
+  '16_marks': string[];
+}
+
+export interface QuestionBank {
+  course_title: string;
+  units: QuestionUnit[];
+}
+
 export interface Subject {
   id:string;
   subject_name: string;
   createdAt?: Timestamp;
   conversation_history?: Message[];
   syllabus?: Syllabus;
+  question_bank?: QuestionBank;
   resources?: string[];
 }
 
