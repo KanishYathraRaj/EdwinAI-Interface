@@ -21,7 +21,7 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
   const content = watch('content');
 
   const onSubmit: SubmitHandler<FormData> = (data) => {
-    if (!data.content.trim() || isLoading) return;
+    if (!data.content || !data.content.trim() || isLoading) return;
     onSend(data.content.trim());
     reset();
   };
