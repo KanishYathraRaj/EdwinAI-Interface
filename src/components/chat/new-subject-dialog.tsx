@@ -18,24 +18,25 @@ import { useState } from 'react';
 interface NewSubjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubjectCreate: (title: string) => void;
+  onSubjectCreate: (title: string, file: File | null) => void;
 }
 
 export function NewSubjectDialog({ open, onOpenChange, onSubjectCreate }: NewSubjectDialogProps) {
   const [title, setTitle] = useState('');
-  const [fileName, setFileName] = useState('');
+  const [file, setFile] = useState<File | null>(null);
 
   const handleCreateSubject = () => {
-    onSubjectCreate(title || 'New Subject');
+    onSubjectCreate(title || 'New Subject', file);
+    // Reset state after creation
     setTitle('');
-    setFileName('');
+    setFile(null);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setFileName(e.target.files[0].name);
+      setFile(e.target.files[0]);
     } else {
-      setFileName('');
+      setFile(null);
     }
   };
 
@@ -70,11 +71,11 @@ export function NewSubjectDialog({ open, onOpenChange, onSubjectCreate }: NewSub
             <div className="flex items-center">
               <label htmlFor="syllabus-file" className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground border border-input rounded-md px-3 py-2 w-full">
                 <Upload size={16} />
-                <span>{fileName || 'Choose File'}</span>
+                <span>{file?.name || 'Choose File'}</span>
               </label>
               <Input id="syllabus-file" type="file" className="sr-only" onChange={handleFileChange} accept=".pdf" />
             </div>
-            {fileName && <p className="text-xs text-muted-foreground">{fileName}</p>}
+            {file && <p className="text-xs text-muted-foreground">{file.name}</p>}
           </div>
         </div>
         <DialogFooter>

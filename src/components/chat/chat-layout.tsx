@@ -9,16 +9,17 @@ import { summarizeChatHistory } from '@/ai/flows/summarize-chat-history';
 import { useAuth, useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, serverTimestamp, addDoc, doc, deleteDoc, updateDoc, orderBy, query } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 export function ChatLayout() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
+  const { toast } = useToast();
 
   const subjectsQuery = useMemoFirebase(() => {
     if (!user) return null;
-    // Removed orderBy('createdAt', 'desc') to prevent query failure if field is missing
     return query(
       collection(firestore, `users/${user.uid}/subjects`)
     );
@@ -36,7 +37,6 @@ export function ChatLayout() {
 
   useEffect(() => {
     if (!activeChatId && subjects && subjects.length > 0) {
-      // After removing orderBy from query, sort here to get the latest.
       const sorted = [...subjects].sort((a, b) => {
         const dateA = a.createdAt?.toDate() || 0;
         const dateB = b.createdAt?.toDate() || 0;
@@ -47,16 +47,58 @@ export function ChatLayout() {
     }
   }, [subjects, activeChatId]);
 
-  const addChat = async (title: string) => {
+  const addChat = async (title: string, file: File | null) => {
     if (!user) return;
     try {
+      // Step 1: Create the subject document in Firestore
       const docRef = await addDoc(collection(firestore, `users/${user.uid}/subjects`), {
         subject_name: title || 'New Subject',
         createdAt: serverTimestamp(),
+        conversation_history: [],
+        resources: [],
       });
-      setActiveChatId(docRef.id);
+      const subjectId = docRef.id;
+      setActiveChatId(subjectId);
+
+      // Step 2: If a file is provided, call the Flask API
+      if (file) {
+        const formData = new FormData();
+        formData.append('user_id', user.uid);
+        formData.append('subject_id', subjectId);
+        formData.append('file', file);
+        
+        try {
+          const response = await fetch('http://127.0.0.1:5000/upsert_syllabus', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'API call failed');
+          }
+          
+          toast({
+            title: "Syllabus Uploaded",
+            description: "The syllabus has been processed and updated.",
+          });
+
+        } catch (apiError: any) {
+          console.error("Error calling Flask API: ", apiError);
+          toast({
+            variant: "destructive",
+            title: "Syllabus Upload Failed",
+            description: apiError.message || "Could not connect to the processing service.",
+          });
+        }
+      }
     } catch (error) {
       console.error("Error creating new subject: ", error);
+       toast({
+        variant: "destructive",
+        title: "Error Creating Subject",
+        description: "An error occurred while creating the new subject.",
+      });
     }
   };
 
@@ -127,7 +169,7 @@ export function ChatLayout() {
           <ChatComponent
             key={activeChatId}
             chat={activeChat as Chat | undefined}
-            onNewChat={() => addChat('New Subject')}
+            onNewChat={() => addChat('New Subject', null)}
           />
         </SidebarInset>
       </SidebarProvider>

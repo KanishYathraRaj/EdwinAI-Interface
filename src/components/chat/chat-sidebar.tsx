@@ -35,7 +35,7 @@ import { signOut } from 'firebase/auth';
 interface ChatSidebarProps {
   chats: Subject[];
   activeChatId: string | null;
-  onNewSubject: (title: string) => void;
+  onNewSubject: (title: string, file: File | null) => void;
   onSelectChat: (id: string) => void;
   onDeleteChat: (id: string) => void;
   isLoading: boolean;
@@ -204,8 +204,8 @@ export default function ChatSidebar({ chats, activeChatId, onNewSubject, onSelec
       <NewSubjectDialog
         open={isNewSubjectDialogOpen}
         onOpenChange={setIsNewSubjectDialogOpen}
-        onSubjectCreate={(title) => {
-          onNewSubject(title);
+        onSubjectCreate={(title, file) => {
+          onNewSubject(title, file);
           setIsNewSubjectDialogOpen(false);
         }}
       />
