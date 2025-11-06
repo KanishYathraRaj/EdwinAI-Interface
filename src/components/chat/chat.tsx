@@ -15,6 +15,7 @@ import QuestionBankDisplay from './question-bank-display';
 import DocumentationDisplay from './documentation-display';
 import { cn } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
+import { Download } from 'lucide-react';
 
 interface ChatProps {
   chat: Chat | undefined;
@@ -25,6 +26,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingDocs, setIsGeneratingDocs] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
@@ -133,6 +135,70 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
       });
     } finally {
       setIsGenerating(false);
+    }
+  };
+  
+  const handleDownloadQuestionBank = async () => {
+    if (!chat?.question_bank) {
+      toast({
+        variant: "destructive",
+        title: "Download Failed",
+        description: "No question bank data available to download.",
+      });
+      return;
+    }
+
+    setIsDownloading(true);
+    try {
+      const response = await fetch('http://127.0.0.1:5000/download_question_bank', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(chat.question_bank),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'API call failed');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = `${chat.question_bank.course_title.replace(/\s+/g, '_') || 'question_bank'}.pdf`;
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch && filenameMatch.length > 1) {
+          filename = filenameMatch[1];
+        }
+      }
+      a.download = filename;
+
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Download Started",
+        description: "Your question bank PDF is downloading.",
+      });
+
+    } catch (error: any) {
+      console.error('Error downloading question bank:', error);
+      toast({
+        title: 'Error Downloading Question Bank',
+        description: error.message || 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -265,8 +331,12 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
                 <div className="p-4">
                 {chat.question_bank ? (
                     <Card>
-                        <CardHeader>
+                        <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle>{chat.question_bank.course_title}</CardTitle>
+                            <Button variant="outline" size="sm" onClick={handleDownloadQuestionBank} disabled={isDownloading}>
+                                <Download className="mr-2" />
+                                {isDownloading ? 'Downloading...' : 'Download'}
+                            </Button>
                         </CardHeader>
                         <CardContent>
                             <QuestionBankDisplay questionBank={chat.question_bank} />
