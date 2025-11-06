@@ -20,6 +20,12 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const content = watch('content');
 
+  const onSubmit: SubmitHandler<FormData> = (data) => {
+    if (!data.content.trim() || isLoading) return;
+    onSend(data.content.trim());
+    reset();
+  };
+  
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -27,11 +33,6 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
     }
   };
 
-  const onSubmit: SubmitHandler<FormData> = (data) => {
-    if (!data.content.trim() || isLoading) return;
-    onSend(data.content.trim());
-    reset();
-  };
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -50,6 +51,7 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
 
   return (
     <div className="p-4 bg-transparent">
+      <form onSubmit={handleSubmit(onSubmit)}>
         <div className="relative">
             <Textarea
             {...register('content')}
@@ -70,7 +72,8 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
             <ArrowUp size={18} />
             </Button>
         </div>
-        <p className="text-center text-xs text-muted-foreground/50 mt-2">EdwinAI can make mistakes. Consider checking important information.</p>
+      </form>
+      <p className="text-center text-xs text-muted-foreground/50 mt-2">EdwinAI can make mistakes. Consider checking important information.</p>
     </div>
   );
 }
