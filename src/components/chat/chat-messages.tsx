@@ -27,11 +27,11 @@ export function ChatMessages({ messages, isLoading, className }: ChatMessagesPro
             <ChatWelcome />
         ) : (
             <div className="flex flex-col gap-4">
-                {messages.map((message) => (
-                    <ChatMessage key={message.id} message={message} />
+                {messages.map((message, index) => (
+                    <ChatMessage key={index} message={message} />
                 ))}
                 {isLoading && (
-                    <ChatMessage message={{id: 'loading', role: 'assistant', content: 'Thinking...'}} isLoading />
+                    <ChatMessage message={{role: 'assistant', message: 'Thinking...'}} isLoading />
                 )}
             </div>
         )}
