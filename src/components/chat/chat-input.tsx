@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ArrowUp } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 interface ChatInputProps {
   onSend: (content: string, isGrounded: boolean) => void;
@@ -75,7 +76,7 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
         <p className="text-center text-xs text-muted-foreground/50">EdwinAI can make mistakes. Consider checking important information.</p>
         <div className="flex items-center space-x-2">
           <Switch id="grounded-mode" checked={isGrounded} onCheckedChange={setIsGrounded} />
-          <Label htmlFor="grounded-mode" className="text-xs text-muted-foreground">
+          <Label htmlFor="grounded-mode" className={cn("text-xs", isGrounded ? "text-muted-foreground" : "text-foreground")}>
             {isGrounded ? 'Grounded' : 'Explore'}
           </Label>
         </div>
