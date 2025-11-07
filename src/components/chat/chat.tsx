@@ -99,6 +99,47 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
       setIsLoading(false);
     }
   };
+  
+  const handleResourceUpload = async (file: File) => {
+    if (!chat || !user) {
+      toast({
+        variant: 'destructive',
+        title: 'Upload Failed',
+        description: 'You must be in a chat session to upload a resource.',
+      });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('user_id', user.uid);
+    formData.append('subject_id', chat.id);
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('http://127.0.0.1:5000/upsert_resources', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'API call failed');
+      }
+
+      const responseData = await response.json();
+      toast({
+        title: 'Upload Successful',
+        description: responseData.message || 'Resource has been processed.',
+      });
+    } catch (error: any) {
+      console.error('Error uploading resource:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Upload Failed',
+        description: error.message || 'Could not connect to the processing service.',
+      });
+    }
+  };
 
   const handleGenerateQuestionBank = async () => {
     if (!chat || !user) return;
@@ -282,7 +323,11 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
                         <ChatMessages messages={messages} isLoading={isLoading} />
                     </div>
                     <div className="pb-4">
-                        <ChatInput onSend={handleSend} isLoading={isLoading} />
+                        <ChatInput
+                          onSend={handleSend}
+                          onResourceUpload={handleResourceUpload}
+                          isLoading={isLoading}
+                        />
                     </div>
                 </div>
             )}
@@ -335,7 +380,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
                         <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle>{chat.question_bank.course_title}</CardTitle>
                             <Button variant="outline" size="sm" onClick={handleDownloadQuestionBank} disabled={isDownloading}>
-                                <Download className="mr-2" />
+                                <Download className="mr-2 h-4 w-4" />
                                 {isDownloading ? 'Downloading...' : 'Download'}
                             </Button>
                         </CardHeader>

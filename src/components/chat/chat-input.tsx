@@ -3,20 +3,25 @@
 import { useRef, useEffect, type KeyboardEvent, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, Upload } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatInputProps {
   onSend: (content: string, isGrounded: boolean) => void;
+  onResourceUpload: (file: File) => void;
   isLoading: boolean;
 }
 
-export function ChatInput({ onSend, isLoading }: ChatInputProps) {
+export function ChatInput({ onSend, onResourceUpload, isLoading }: ChatInputProps) {
   const [content, setContent] = useState('');
   const [isGrounded, setIsGrounded] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
 
   const handleSend = () => {
     if (!content || !content.trim() || isLoading) return;
@@ -49,6 +54,21 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
     }
   }, [content]);
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      onResourceUpload(file);
+      toast({
+        title: 'Uploading Resource',
+        description: `Your file "${file.name}" is being uploaded.`,
+      });
+    }
+    // Reset file input to allow uploading the same file again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="p-4 bg-transparent">
       <div className="relative">
@@ -74,11 +94,24 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
       </div>
       <div className="flex items-center justify-between mt-2">
         <p className="text-center text-xs text-muted-foreground/50">EdwinAI can make mistakes. Consider checking important information.</p>
-        <div className="flex items-center space-x-2">
-          <Switch id="grounded-mode" checked={isGrounded} onCheckedChange={setIsGrounded} />
-          <Label htmlFor="grounded-mode" className={cn("text-xs", isGrounded ? "text-muted-foreground" : "text-foreground")}>
-            {isGrounded ? 'Grounded' : 'Explore'}
-          </Label>
+        <div className="flex items-center space-x-4">
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                accept=".pdf"
+            />
+            <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
+                <Upload className="mr-2 h-4 w-4" />
+                Resource
+            </Button>
+            <div className="flex items-center space-x-2">
+                <Switch id="grounded-mode" checked={isGrounded} onCheckedChange={setIsGrounded} />
+                <Label htmlFor="grounded-mode" className={cn("text-xs", isGrounded ? "text-muted-foreground" : "text-foreground")}>
+                    {isGrounded ? 'Grounded' : 'Explore'}
+                </Label>
+            </div>
         </div>
       </div>
     </div>
