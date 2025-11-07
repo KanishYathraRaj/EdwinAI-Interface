@@ -75,7 +75,9 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
         <p className="text-center text-xs text-muted-foreground/50">EdwinAI can make mistakes. Consider checking important information.</p>
         <div className="flex items-center space-x-2">
           <Switch id="grounded-mode" checked={isGrounded} onCheckedChange={setIsGrounded} />
-          <Label htmlFor="grounded-mode" className="text-xs text-muted-foreground">Grounded</Label>
+          <Label htmlFor="grounded-mode" className="text-xs text-muted-foreground">
+            {isGrounded ? 'Grounded' : 'Explore'}
+          </Label>
         </div>
       </div>
     </div>
