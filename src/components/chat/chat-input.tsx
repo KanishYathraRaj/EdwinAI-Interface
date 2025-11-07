@@ -7,7 +7,6 @@ import { ArrowUp, Upload } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
 
 interface ChatInputProps {
   onSend: (content: string, isGrounded: boolean) => void;
@@ -20,8 +19,6 @@ export function ChatInput({ onSend, onResourceUpload, isLoading }: ChatInputProp
   const [isGrounded, setIsGrounded] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
-
 
   const handleSend = () => {
     if (!content || !content.trim() || isLoading) return;
@@ -58,10 +55,6 @@ export function ChatInput({ onSend, onResourceUpload, isLoading }: ChatInputProp
     const file = event.target.files?.[0];
     if (file) {
       onResourceUpload(file);
-      toast({
-        title: 'Uploading Resource',
-        description: `Your file "${file.name}" is being uploaded.`,
-      });
     }
     // Reset file input to allow uploading the same file again
     if (fileInputRef.current) {

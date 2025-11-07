@@ -114,6 +114,11 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     formData.append('user_id', user.uid);
     formData.append('subject_id', chat.id);
     formData.append('file', file);
+    
+    toast({
+      title: 'Uploading Resource',
+      description: `Your file "${file.name}" is being processed...`,
+    });
 
     try {
       const response = await fetch('http://127.0.0.1:5000/upsert_resources', {
