@@ -43,7 +43,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     setActiveView('research');
   }, [chat]);
 
-  const handleSend = async (content: string) => {
+  const handleSend = async (content: string, isGrounded: boolean) => {
     if (!chat || !user) return;
   
     const userMessage: Message = {
@@ -67,6 +67,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
           subject_id: chat.id,
           user_query: content,
           user_subject_json: chat,
+          grounded: isGrounded,
         }),
       });
   

@@ -4,19 +4,22 @@ import { useRef, useEffect, type KeyboardEvent, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowUp } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface ChatInputProps {
-  onSend: (content: string) => void;
+  onSend: (content: string, isGrounded: boolean) => void;
   isLoading: boolean;
 }
 
 export function ChatInput({ onSend, isLoading }: ChatInputProps) {
   const [content, setContent] = useState('');
+  const [isGrounded, setIsGrounded] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSend = () => {
     if (!content || !content.trim() || isLoading) return;
-    onSend(content.trim());
+    onSend(content.trim(), isGrounded);
     setContent('');
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -68,7 +71,13 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
           <ArrowUp size={18} />
         </Button>
       </div>
-      <p className="text-center text-xs text-muted-foreground/50 mt-2">EdwinAI can make mistakes. Consider checking important information.</p>
+      <div className="flex items-center justify-between mt-2">
+        <p className="text-center text-xs text-muted-foreground/50">EdwinAI can make mistakes. Consider checking important information.</p>
+        <div className="flex items-center space-x-2">
+          <Switch id="grounded-mode" checked={isGrounded} onCheckedChange={setIsGrounded} />
+          <Label htmlFor="grounded-mode" className="text-xs text-muted-foreground">Grounded</Label>
+        </div>
+      </div>
     </div>
   );
 }
