@@ -14,12 +14,15 @@ interface ChatMessagesProps {
 
 export function ChatMessages({ messages, isLoading, className }: ChatMessagesProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
-    if (scrollRef.current) {
-        scrollRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }
-  }, [messages.length, isLoading]);
+    scrollToBottom();
+  }, [messages, isLoading]);
 
   return (
     <div className={cn("w-full p-4", className)}>
@@ -35,7 +38,7 @@ export function ChatMessages({ messages, isLoading, className }: ChatMessagesPro
                 )}
             </div>
         )}
-        <div ref={scrollRef} />
+        <div ref={messagesEndRef} />
     </div>
   )
 }

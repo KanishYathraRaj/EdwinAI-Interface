@@ -60,6 +60,7 @@ export interface Subject {
   question_bank?: QuestionBank;
   documentation?: Documentation;
   resources?: string[];
+  gcr_course_id?: string;
 }
 
 export interface Chat extends Subject {}
@@ -69,4 +70,36 @@ export interface UserProfile {
     email: string;
     displayName?: string;
     photoURL?: string;
+}
+
+export interface GcrCourse {
+  id: string;
+  name: string;
+  section?: string;
+  descriptionHeading?: string;
+  room?: string;
+  ownerId: string;
+  creationTime: string;
+  updateTime: string;
+  enrollmentCode: string;
+  courseState: string;
+  alternateLink: string;
+  teacherGroupEmail: string;
+  courseGroupEmail: string;
+  guardiansEnabled: boolean;
+  calendarId: string;
+}
+
+export interface GcrStudent {
+  courseId: string;
+  userId: string;
+  profile: {
+    emailAddress: string;
+    name: {
+      givenName: string;
+      familyName: string;
+      fullName: string;
+    };
+    photoUrl: string;
+  };
 }
