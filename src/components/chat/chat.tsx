@@ -124,7 +124,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
 
     setIsUploading(true);
     try {
-      await uploadMaterialToGcr(chat.gcr_course_id, material);
+      await uploadMaterialToGcr(chat.gcr_course_id, material, materialType);
       toast({
         title: "Upload Successful",
         description: `The ${materialType.replace('_', ' ')} has been uploaded to Google Classroom.`,
