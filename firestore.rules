@@ -20,13 +20,13 @@ service cloud.firestore {
      * @deny (list, create, delete) Users cannot list, create, or delete other user profiles directly.
      */
     match /users/{userId} {
-      function isOwner(userId) {
+      function isOwner() {
         return request.auth.uid == userId;
       }
 
-      allow get: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow create: if isOwner(userId);
+      allow get: if isOwner();
+      allow update: if isOwner();
+      allow create: if isOwner();
       allow delete: if false; // Generally, don't let users delete their own profile doc
       allow list: if false; // Don't allow listing of all users
     }
@@ -43,19 +43,19 @@ service cloud.firestore {
      * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/subjects/{subjectId} {
-      function isOwner(userId) {
+      function isOwner() {
         return request.auth.uid == userId;
       }
 
-      function isExistingOwner(userId) {
+      function isExistingOwner() {
         return request.auth.uid == userId && resource != null;
       }
 
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow get: if isOwner();
+      allow list: if isOwner();
+      allow create: if isOwner();
+      allow update: if isExistingOwner();
+      allow delete: if isExistingOwner();
     }
 
     /**
@@ -70,19 +70,19 @@ service cloud.firestore {
      * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/subjects/{subjectId}/messages/{messageId} {
-      function isOwner(userId) {
+      function isOwner() {
         return request.auth.uid == userId;
       }
 
-      function isExistingOwner(userId) {
+      function isExistingOwner() {
         return request.auth.uid == userId && resource != null;
       }
 
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow get: if isOwner();
+      allow list: if isOwner();
+      allow create: if isOwner();
+      allow update: if isExistingOwner();
+      allow delete: if isExistingOwner();
     }
   }
 }
