@@ -1,7 +1,7 @@
-import { ReactNode } from 'react';
-import { Sidebar } from './Sidebar';
-import { TopNav } from './TopNav';
-import { Subject, Tab } from '../../types';
+import { ReactNode } from "react";
+import { Sidebar } from "./Sidebar";
+import { TopNav } from "./TopNav";
+import { Subject, Tab } from "../../types";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -41,10 +41,9 @@ export function MainLayout({
           onTabChange={onTabChange}
           onConnectClassroom={onConnectClassroom}
           hasSubject={!!selectedSubject}
+          gcrCourseId={selectedSubject?.gcr_course_id ?? null}
         />
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
+        <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>
   );

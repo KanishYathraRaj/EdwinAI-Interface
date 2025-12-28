@@ -53,6 +53,8 @@ export interface Subject {
   conversation_history?: ConversationEntry[];
   question_bank?: QuestionBank;
   syllabus?: Syllabus;
+  // Google Classroom linked course id
+  gcr_course_id?: string;
   // generated documentation for the subject (optional)
   documentation?: any;
 

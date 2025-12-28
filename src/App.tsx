@@ -9,17 +9,24 @@ import DocumentationView from "./components/documentation/DocumentationView";
 import { QuestionBankView } from "./components/questions/QuestionBankView";
 import { StudentsView } from "./components/students/StudentsView";
 import { useSubjects } from "./hooks/useSubjects";
+import { fetchSubject } from "./lib/firestoreHelpers";
+import ConnectGCRModal from "./components/gcr/ConnectGCRModal";
 import { Subject, Tab } from "./types";
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
-  const { subjects, createSubject } = useSubjects(user?.uid || null);
+  const { subjects, createSubject, refreshSubjects } = useSubjects(
+    user?.uid || null
+  );
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("research");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [currentChatSession, setCurrentChatSession] = useState<string | null>(
     null
   );
+
+  // GCR modal state must be declared with other hooks so hook order is stable
+  const [isGcrModalOpen, setIsGcrModalOpen] = useState(false);
 
   if (authLoading) {
     return (
@@ -81,7 +88,22 @@ function AppContent() {
   };
 
   const handleConnectClassroom = () => {
-    alert("Google Classroom integration coming soon!");
+    if (!selectedSubject) return; // TopNav disables it when no subject selected
+    setIsGcrModalOpen(true);
+  };
+
+  // After linking a GCR course, fetch the updated subject and set it as selected
+  const handleGcrLinkedAndRefresh = async () => {
+    try {
+      await refreshSubjects();
+      if (user && selectedSubject) {
+        const updated = await fetchSubject(user.uid, selectedSubject.id);
+        if (updated) setSelectedSubject(updated);
+      }
+    } catch (e) {
+      // ignore
+    }
+    setIsGcrModalOpen(false);
   };
 
   const renderContent = () => {
@@ -151,6 +173,13 @@ function AppContent() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onCreate={handleCreateSubject}
+      />
+      <ConnectGCRModal
+        isOpen={isGcrModalOpen}
+        onClose={() => setIsGcrModalOpen(false)}
+        userId={user!.uid}
+        subjectId={selectedSubject?.id ?? ""}
+        onLinked={handleGcrLinkedAndRefresh}
       />
     </>
   );

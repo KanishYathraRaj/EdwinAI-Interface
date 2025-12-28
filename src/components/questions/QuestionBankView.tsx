@@ -15,9 +15,12 @@ export function QuestionBankView({
 }: QuestionBankViewProps) {
   const { user } = useAuth();
   const [questionBank, setQuestionBank] = useState<QuestionBank | null>(null);
+  const [gcrCourseId, setGcrCourseId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showRaw, setShowRaw] = useState(false);
 
@@ -37,6 +40,7 @@ export function QuestionBankView({
     try {
       setLoading(true);
       const subject = await fetchSubject(user.uid, subjectId);
+      setGcrCourseId(subject?.gcr_course_id ?? null);
       setQuestionBank(
         (subject && (subject.question_bank as QuestionBank | undefined)) ?? null
       );
@@ -46,6 +50,85 @@ export function QuestionBankView({
       setQuestionBank(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUploadToGCR = async () => {
+    if (!user || !questionBank) return;
+    setUploading(true);
+    setUploadSuccess(null);
+    setError(null);
+
+    try {
+      const subject = await fetchSubject(user.uid, subjectId);
+      const courseId = subject?.gcr_course_id;
+      if (!courseId)
+        throw new Error(
+          "This subject is not linked to a Google Classroom course"
+        );
+
+      // Request PDF blob from backend
+      const resp = await fetch("http://localhost:5000/download_question_bank", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(questionBank),
+      });
+
+      if (!resp.ok) {
+        const err = await resp
+          .json()
+          .catch(() => ({ error: "Failed to prepare PDF" }));
+        throw new Error(err.error || "Failed to prepare PDF");
+      }
+
+      const blob = await resp.blob();
+
+      // infer filename
+      let filename = `${(questionBank.course_title ?? subjectTitle)
+        .toUpperCase()
+        .replace(/\s+/g, "_")}_question_bank.pdf`;
+      const cd =
+        resp.headers.get("Content-Disposition") ||
+        resp.headers.get("content-disposition");
+      if (cd) {
+        const m = /filename\*?=(?:UTF-8''")?"?([^";]+)"?/.exec(cd);
+        if (m && m[1]) filename = decodeURIComponent(m[1]);
+      }
+
+      const form = new FormData();
+      form.append("file", blob, filename);
+      form.append("title", filename);
+
+      const API_BASE =
+        (import.meta as any).env?.VITE_API_BASE || "http://localhost:5000";
+      const uploadResp = await fetch(
+        `${API_BASE}/gcr/courses/${encodeURIComponent(
+          courseId
+        )}/materials/upload`,
+        {
+          method: "POST",
+          body: form,
+        }
+      );
+
+      if (!uploadResp.ok) {
+        const err = await uploadResp
+          .json()
+          .catch(() => ({ error: "Upload failed" }));
+        throw new Error(
+          err.error || `Upload failed (status ${uploadResp.status})`
+        );
+      }
+
+      const body = await uploadResp.json().catch(() => ({}));
+      setUploadSuccess(
+        (body && (body.material?.title || filename)) || filename
+      );
+    } catch (e: any) {
+      console.error("Upload to GCR failed:", e);
+      setError(e?.message ?? "Upload to Google Classroom failed");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -178,10 +261,24 @@ export function QuestionBankView({
               <Download className="w-4 h-4" />
               {downloading ? "Preparing PDF..." : "Download"}
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors text-sm">
+            <button
+              onClick={handleUploadToGCR}
+              disabled={!gcrCourseId || uploading}
+              className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              title={
+                !gcrCourseId
+                  ? "Connect a Google Classroom course to this subject first"
+                  : "Upload question bank PDF to Google Classroom"
+              }
+            >
               <Upload className="w-4 h-4" />
-              Upload to GCR
+              {uploading ? "Uploading…" : "Upload to GCR"}
             </button>
+            {uploadSuccess && (
+              <div className="text-green-400 text-sm ml-2">
+                Uploaded: {uploadSuccess}
+              </div>
+            )}
             <button
               onClick={() => setShowRaw((s) => !s)}
               className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-xs rounded-md"
