@@ -2,18 +2,58 @@ export interface Profile {
   id: string;
   email: string;
   full_name: string | null;
+  // convenience alias
+  name?: string | null;
   google_classroom_token: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 }
 
+export interface ConversationEntry {
+  message: string;
+  role: 'user' | 'system';
+  created_at?: string;
+}
+
+export interface QuestionBankUnit {
+  unit_number: number;
+  unit_title: string;
+  '16_marks'?: string[];
+  '2_marks'?: string[];
+}
+
+export interface QuestionBank {
+  course_title?: string;
+  units?: QuestionBankUnit[];
+}
+
+export interface SyllabusUnit {
+  unit_number: number;
+  unit_title: string;
+  topics: string[];
+}
+
+export interface Syllabus {
+  course_title?: string;
+  units?: SyllabusUnit[];
+}
+
 export interface Subject {
   id: string;
   user_id: string;
-  title: string;
-  description: string;
-  syllabus_url: string | null;
-  google_classroom_id: string | null;
+  // canonical name in the new schema
+  subject_name: string;
+
+  // backward-compatible legacy fields (optional)
+  title?: string;
+  description?: string;
+
+  // new nested fields
+  resources?: string[];
+  conversation_history?: ConversationEntry[];
+  question_bank?: QuestionBank;
+  syllabus?: Syllabus;
+
   created_at: string;
   updated_at: string;
 }
@@ -78,49 +118,3 @@ export interface Resource {
   created_at: string;
 }
 
-export interface Database {
-  public: {
-    Tables: {
-      profiles: {
-        Row: Profile;
-        Insert: Omit<Profile, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<Profile, 'id' | 'created_at' | 'updated_at'>>;
-      };
-      subjects: {
-        Row: Subject;
-        Insert: Omit<Subject, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<Subject, 'id' | 'created_at' | 'updated_at'>>;
-      };
-      chat_sessions: {
-        Row: ChatSession;
-        Insert: Omit<ChatSession, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<ChatSession, 'id' | 'created_at' | 'updated_at'>>;
-      };
-      messages: {
-        Row: Message;
-        Insert: Omit<Message, 'id' | 'created_at'>;
-        Update: Partial<Omit<Message, 'id' | 'created_at'>>;
-      };
-      syllabus_items: {
-        Row: SyllabusItem;
-        Insert: Omit<SyllabusItem, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<SyllabusItem, 'id' | 'created_at' | 'updated_at'>>;
-      };
-      questions: {
-        Row: Question;
-        Insert: Omit<Question, 'id' | 'created_at'>;
-        Update: Partial<Omit<Question, 'id' | 'created_at'>>;
-      };
-      students: {
-        Row: Student;
-        Insert: Omit<Student, 'id' | 'created_at'>;
-        Update: Partial<Omit<Student, 'id' | 'created_at'>>;
-      };
-      resources: {
-        Row: Resource;
-        Insert: Omit<Resource, 'id' | 'created_at'>;
-        Update: Partial<Omit<Resource, 'id' | 'created_at'>>;
-      };
-    };
-  };
-}

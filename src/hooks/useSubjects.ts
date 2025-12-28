@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
 import { Subject } from '../types';
+import { createSubjectInUser, fetchSubjectsForUser } from '../lib/firestoreHelpers';
 
 export function useSubjects(userId: string | null) {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -19,47 +19,39 @@ export function useSubjects(userId: string | null) {
   const loadSubjects = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('subjects')
-        .select('*')
-        .order('created_at', { ascending: false });
+      if (!userId) return;
 
-      if (error) throw error;
-      setSubjects(data || []);
+      const subjectsData = await fetchSubjectsForUser(userId);
+      // sort by created_at desc if available
+      subjectsData.sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
+      setSubjects(subjectsData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load subjects');
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const createSubject = async (title: string, description: string, syllabusUrl: string | null) => {
+  const createSubject = async (title: string, description: string, _syllabusUrl: string | null) => {
     if (!userId) throw new Error('User not authenticated');
 
-    const { data, error } = await supabase
-      .from('subjects')
-      .insert({
-        user_id: userId,
-        title,
-        description,
-        syllabus_url: syllabusUrl,
-        google_classroom_id: null,
-      })
-      .select()
-      .single();
+    const payload: Partial<Subject> = {
+      subject_name: title,
+      title,
+      description,
+      resources: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
 
-    if (error) throw error;
-    setSubjects((prev) => [data, ...prev]);
-    return data;
+    const created = await createSubjectInUser(userId, payload);
+    setSubjects((prev) => [created, ...prev]);
+    return created;
   };
 
   const deleteSubject = async (subjectId: string) => {
-    const { error } = await supabase
-      .from('subjects')
-      .delete()
-      .eq('id', subjectId);
-
-    if (error) throw error;
+    // delete from users/{uid}/subjects/{subjectId} requires user context; implement when deletion helper is added
     setSubjects((prev) => prev.filter((s) => s.id !== subjectId));
   };
 

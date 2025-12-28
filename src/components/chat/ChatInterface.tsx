@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
-import { ChatMessage } from './ChatMessage';
-import { ChatInput } from './ChatInput';
-import { Message } from '../../types';
-import { supabase } from '../../lib/supabase';
+import { useState, useEffect, useRef } from "react";
+import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
+import { db } from "../../lib/firebase";
+import { fetchSubject } from "../../lib/firestoreHelpers";
+import { ChatMessage } from "./ChatMessage";
+import { ChatInput } from "./ChatInput";
+import { Message } from "../../types";
 
 interface ChatInterfaceProps {
   sessionId: string | null;
@@ -10,13 +12,21 @@ interface ChatInterfaceProps {
   userId: string;
 }
 
-export function ChatInterface({ sessionId, subjectId, userId }: ChatInterfaceProps) {
+export function ChatInterface({
+  sessionId,
+  subjectId,
+  userId,
+}: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (sessionId) {
+    // Prefer loading subject-level conversation_history when a subject is selected.
+    // If no subject is selected, fall back to chat session messages when sessionId is present.
+    if (subjectId) {
+      loadSubjectConversation();
+    } else if (sessionId) {
       loadMessages();
     } else {
       setMessages([]);
@@ -24,92 +34,125 @@ export function ChatInterface({ sessionId, subjectId, userId }: ChatInterfacePro
   }, [sessionId]);
 
   useEffect(() => {
+    if (subjectId) {
+      loadSubjectConversation();
+    }
+  }, [subjectId]);
+
+  useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const loadMessages = async () => {
     if (!sessionId) return;
 
     try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('chat_session_id', sessionId)
-        .order('created_at', { ascending: true });
+      const q = query(
+        collection(db, "messages"),
+        where("chat_session_id", "==", sessionId),
+        orderBy("created_at", "asc")
+      );
 
-      if (error) throw error;
-      setMessages(data || []);
+      const querySnapshot = await getDocs(q);
+      const messagesData = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Message[];
+
+      setMessages(messagesData);
     } catch (err) {
-      console.error('Error loading messages:', err);
+      console.error("Error loading messages:", err);
     }
   };
 
-  const createSession = async () => {
-    const { data, error } = await supabase
-      .from('chat_sessions')
-      .insert({
-        user_id: userId,
-        subject_id: subjectId,
-        title: 'New Chat',
-      })
-      .select()
-      .single();
+  const loadSubjectConversation = async () => {
+    if (!subjectId) return;
+    try {
+      const subject = await fetchSubject(userId, subjectId);
+      const history =
+        (subject?.conversation_history as any[] | undefined) ?? [];
+      const msgs = history.map((h, i) => ({
+        id: `sub-${i}-${Math.random().toString(36).slice(2, 9)}`,
+        chat_session_id: subjectId,
+        role:
+          h.role === "system" ? "assistant" : (h.role as "user" | "assistant"),
+        content: h.message,
+        metadata: {},
+        created_at: h.created_at ?? new Date().toISOString(),
+      })) as Message[];
 
-    if (error) throw error;
-    return data.id;
+      setMessages(msgs);
+    } catch (err) {
+      console.error("Error loading subject conversation:", err);
+      setMessages([]);
+    }
   };
+
+  // Previously supported creating independent chat sessions; not used when using subject-level conversation_history.
 
   const handleSendMessage = async (content: string) => {
     try {
       setLoading(true);
-
-      let currentSessionId = sessionId;
-      if (!currentSessionId) {
-        currentSessionId = await createSession();
-      }
-
-      const userMessage: Omit<Message, 'id' | 'created_at'> = {
-        chat_session_id: currentSessionId,
-        role: 'user',
+      // Optimistically append the user's message to the UI
+      const userMsg: Message = {
+        id: `local-user-${Date.now()}`,
+        chat_session_id: subjectId ?? sessionId ?? null,
+        role: "user",
         content,
         metadata: {},
+        created_at: new Date().toISOString(),
+      } as Message;
+
+      setMessages((prev) => [...prev, userMsg]);
+
+      // Prepare payload for backend /ask endpoint
+      const payload: any = {
+        user_query: content,
+        user_id: userId,
+        subject_id: subjectId,
+        user_subject_json: {},
       };
 
-      const { data: savedUserMessage, error: userError } = await supabase
-        .from('messages')
-        .insert(userMessage)
-        .select()
-        .single();
+      // include subject-level context if available
+      if (subjectId) {
+        const subject = await fetchSubject(userId, subjectId);
+        if (subject) payload.user_subject_json = subject;
+      }
 
-      if (userError) throw userError;
+      const resp = await fetch("http://localhost:5000/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-      setMessages((prev) => [...prev, savedUserMessage]);
+      if (!resp.ok) {
+        const err = await resp
+          .json()
+          .catch(() => ({ error: "Request failed" }));
+        throw new Error(err.error || "Request failed");
+      }
 
-      const assistantResponse = `I'm a placeholder response. In a production app, this would call an AI API to generate a response based on: "${content}"`;
+      const data = await resp.json();
 
-      const assistantMessage: Omit<Message, 'id' | 'created_at'> = {
-        chat_session_id: currentSessionId,
-        role: 'assistant',
-        content: assistantResponse,
+      // Append assistant reply from backend
+      const assistantReply = (data?.reply as string) ?? "No response";
+      const assistantMsg: Message = {
+        id: `local-assistant-${Date.now()}`,
+        chat_session_id: subjectId ?? sessionId ?? null,
+        role: "assistant",
+        content: assistantReply,
         metadata: {},
-      };
+        created_at: new Date().toISOString(),
+      } as Message;
 
-      const { data: savedAssistantMessage, error: assistantError } = await supabase
-        .from('messages')
-        .insert(assistantMessage)
-        .select()
-        .single();
-
-      if (assistantError) throw assistantError;
-
-      setMessages((prev) => [...prev, savedAssistantMessage]);
+      setMessages((prev) => [...prev, assistantMsg]);
     } catch (err) {
-      console.error('Error sending message:', err);
-      alert('Failed to send message. Please try again.');
+      console.error("Error sending message:", err);
+      alert("Failed to send message. Please try again.");
     } finally {
       setLoading(false);
     }

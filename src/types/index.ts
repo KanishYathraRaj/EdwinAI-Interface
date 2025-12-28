@@ -11,8 +11,10 @@ export interface NavigationItem {
 }
 
 export interface CreateSubjectForm {
-  title: string;
-  description: string;
+  // new schema uses `subject_name` — keep `title` for backward compatibility
+  subject_name?: string;
+  title?: string;
+  description?: string;
   syllabusFile?: File;
 }
 

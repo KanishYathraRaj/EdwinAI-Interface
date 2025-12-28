@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 import { Student } from '../../types';
-import { supabase } from '../../lib/supabase';
 
 interface StudentsViewProps {
   subjectId: string;
@@ -19,14 +20,20 @@ export function StudentsView({ subjectId }: StudentsViewProps) {
     try {
       setLoading(true);
       setError(null);
-      const { data, error } = await supabase
-        .from('students')
-        .select('*')
-        .eq('subject_id', subjectId)
-        .order('name', { ascending: true });
+      
+      const q = query(
+        collection(db, 'students'),
+        where('subject_id', '==', subjectId),
+        orderBy('name', 'asc')
+      );
 
-      if (error) throw error;
-      setStudents(data || []);
+      const querySnapshot = await getDocs(q);
+      const data = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Student[];
+
+      setStudents(data);
     } catch (err) {
       console.error('Error loading students:', err);
       setError('Failed to fetch students');

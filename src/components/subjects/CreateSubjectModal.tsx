@@ -1,34 +1,43 @@
-import { useState } from 'react';
-import { X, Upload } from 'lucide-react';
+import { useState } from "react";
+import { X, Upload } from "lucide-react";
 
 interface CreateSubjectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (title: string, description: string, syllabusFile: File | null) => Promise<void>;
+  // onCreate receives the subject name as first arg (subject_name in new schema)
+  onCreate: (
+    subject_name: string,
+    description: string,
+    syllabusFile: File | null
+  ) => Promise<void>;
 }
 
-export function CreateSubjectModal({ isOpen, onClose, onCreate }: CreateSubjectModalProps) {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+export function CreateSubjectModal({
+  isOpen,
+  onClose,
+  onCreate,
+}: CreateSubjectModalProps) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [syllabusFile, setSyllabusFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
       await onCreate(title, description, syllabusFile);
-      setTitle('');
-      setDescription('');
+      setTitle("");
+      setDescription("");
       setSyllabusFile(null);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create subject');
+      setError(err instanceof Error ? err.message : "Failed to create subject");
     } finally {
       setLoading(false);
     }
@@ -36,10 +45,10 @@ export function CreateSubjectModal({ isOpen, onClose, onCreate }: CreateSubjectM
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type === 'application/pdf') {
+    if (file && file.type === "application/pdf") {
       setSyllabusFile(file);
     } else {
-      alert('Please select a PDF file');
+      alert("Please select a PDF file");
     }
   };
 
@@ -63,7 +72,10 @@ export function CreateSubjectModal({ isOpen, onClose, onCreate }: CreateSubjectM
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-300 mb-2">
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-gray-300 mb-2"
+            >
               Title
             </label>
             <input
@@ -78,7 +90,10 @@ export function CreateSubjectModal({ isOpen, onClose, onCreate }: CreateSubjectM
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-300 mb-2">
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-gray-300 mb-2"
+            >
               Description
             </label>
             <textarea
@@ -101,7 +116,7 @@ export function CreateSubjectModal({ isOpen, onClose, onCreate }: CreateSubjectM
             >
               <Upload className="w-5 h-5 text-gray-400" />
               <span className="text-sm text-gray-400">
-                {syllabusFile ? syllabusFile.name : 'Choose File'}
+                {syllabusFile ? syllabusFile.name : "Choose File"}
               </span>
             </label>
             <input
@@ -132,7 +147,7 @@ export function CreateSubjectModal({ isOpen, onClose, onCreate }: CreateSubjectM
               disabled={loading || !title}
               className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
             >
-              {loading ? 'Creating...' : 'Create Subject'}
+              {loading ? "Creating..." : "Create Subject"}
             </button>
           </div>
         </form>
