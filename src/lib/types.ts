@@ -50,6 +50,14 @@ export interface Documentation {
   units: DocumentationUnit[];
 }
 
+export interface LatestQuiz {
+  title: string;
+  course_id: string;
+  form_id: string;
+  responder_uri: string;
+  coursework_id: string;
+  created_at: Timestamp;
+}
 
 export interface Subject {
   id:string;
@@ -61,6 +69,7 @@ export interface Subject {
   documentation?: Documentation;
   resources?: string[];
   gcr_course_id?: string;
+  latest_quiz?: LatestQuiz;
 }
 
 export interface Chat extends Subject {}

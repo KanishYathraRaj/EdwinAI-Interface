@@ -14,16 +14,17 @@ import SyllabusDisplay from './syllabus-display';
 import QuestionBankDisplay from './question-bank-display';
 import DocumentationDisplay from './documentation-display';
 import { cn } from '@/lib/utils';
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
-import { Download, Upload, Link2 } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '../ui/card';
+import { Download, Upload, Link as LinkIcon, ExternalLink } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { triggerGcrAuth, getGcrCourses, uploadMaterialToGcr } from '@/lib/gcr';
+import { getGcrCourses, uploadMaterialToGcr, generateGcrAssessment } from '@/lib/gcr';
 import StudentsDisplay from './students-display';
+import GenerateAssessmentForm from './generate-assessment-form';
 
 interface ChatProps {
   chat: Chat | undefined;
@@ -58,8 +59,10 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   }, [chat]);
   
   const handleGcrAuth = async () => {
+    // This function is less important now as auth is triggered by linking/fetching
+    // but can be kept for a manual auth trigger if needed.
     try {
-      await triggerGcrAuth();
+      // await triggerGcrAuth();
       setIsGcrAuthDone(true);
       toast({
         title: "Google Classroom Authenticated",
@@ -393,7 +396,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     setActiveView(tab);
   };
 
-  const navItems = ['Research', 'Documentation', 'Syllabus', 'Question Bank', 'Students'];
+  const navItems = ['Research', 'Documentation', 'Syllabus', 'Question Bank', 'Assessments', 'Students'];
 
   const linkedCourseName = useMemo(() => {
     if (!chat.gcr_course_id || gcrCourses.length === 0) return null;
@@ -427,20 +430,22 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
             ) : (
               <DropdownMenu onOpenChange={(open) => open && gcrCourses.length === 0 && handleFetchGcrCourses()}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" onClick={() => !isGcrAuthDone && handleGcrAuth()}>
-                    <Link2 className="mr-2 h-4 w-4" />
-                    {isGcrAuthDone ? 'Link Course' : 'Connect to Classroom'}
+                   <Button variant="outline" size="sm">
+                    <LinkIcon className="mr-2 h-4 w-4" />
+                    Link Course
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   {isCourseListLoading ? (
                     <DropdownMenuItem disabled>Loading courses...</DropdownMenuItem>
-                  ) : (
+                  ) : gcrCourses.length > 0 ? (
                     gcrCourses.map(course => (
                       <DropdownMenuItem key={course.id} onClick={() => handleLinkCourse(course.id)}>
                         {course.name}
                       </DropdownMenuItem>
                     ))
+                  ) : (
+                     <DropdownMenuItem disabled>No courses found.</DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -537,6 +542,39 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
                     </div>
                 )}
                 </div>
+            )}
+            
+            {activeView === 'assessments' && (
+              <div className="p-4">
+                <div className="grid gap-6">
+                  <GenerateAssessmentForm chat={chat} />
+                  
+                  {chat.latest_quiz && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Latest Assessment</CardTitle>
+                        <CardDescription>
+                          This is the most recent assessment generated for this subject.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="font-semibold">{chat.latest_quiz.title}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Posted to Google Classroom.
+                        </p>
+                      </CardContent>
+                      <CardFooter>
+                        <a href={chat.latest_quiz.responder_uri} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline">
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            View Form
+                          </Button>
+                        </a>
+                      </CardFooter>
+                    </Card>
+                  )}
+                </div>
+              </div>
             )}
 
             {activeView === 'students' && (

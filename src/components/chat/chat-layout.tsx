@@ -21,7 +21,8 @@ export function ChatLayout() {
   const subjectsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(
-      collection(firestore, `users/${user.uid}/subjects`)
+      collection(firestore, `users/${user.uid}/subjects`),
+      orderBy('createdAt', 'desc')
     );
   }, [firestore, user]);
 
@@ -37,13 +38,7 @@ export function ChatLayout() {
 
   useEffect(() => {
     if (!activeChatId && subjects && subjects.length > 0) {
-      const sorted = [...subjects].sort((a, b) => {
-        const dateA = a.createdAt?.toDate() || 0;
-        const dateB = b.createdAt?.toDate() || 0;
-        if (!dateA || !dateB) return 0;
-        return dateB.getTime() - dateA.getTime();
-      });
-      setActiveChatId(sorted[0].id);
+      setActiveChatId(subjects[0].id);
     }
   }, [subjects, activeChatId]);
 
@@ -137,11 +132,8 @@ export function ChatLayout() {
 
   const sortedChats = useMemo(() => {
     if (!subjects) return [];
-    return [...subjects].sort((a, b) => {
-      const dateA = a.createdAt?.toDate() || new Date(0);
-      const dateB = b.createdAt?.toDate() || new Date(0);
-      return dateB.getTime() - dateA.getTime();
-    });
+    // The query is already sorting by createdAt descending
+    return subjects;
   }, [subjects]);
   
   if (isUserLoading || !user) {

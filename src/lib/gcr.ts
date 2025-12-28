@@ -16,11 +16,6 @@ async function handleResponse(response: Response) {
     return response.json();
 }
 
-export async function triggerGcrAuth(): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/gcr/auth`, { method: 'POST' });
-    return handleResponse(response);
-}
-
 export async function getGcrCourses(): Promise<GcrCourse[]> {
     const response = await fetch(`${API_BASE_URL}/gcr/courses`);
     const data = await handleResponse(response);
@@ -55,7 +50,6 @@ async function fetchPdfBlob(material: any, materialType: 'documentation' | 'ques
     return response.blob();
 }
 
-
 export async function uploadMaterialToGcr(courseId: string, material: any, materialType: 'documentation' | 'question_bank'): Promise<any> {
     // 1. Fetch the formatted PDF from the backend first
     const pdfBlob = await fetchPdfBlob(material, materialType);
@@ -73,5 +67,14 @@ export async function uploadMaterialToGcr(courseId: string, material: any, mater
         body: formData,
     });
     
+    return handleResponse(response);
+}
+
+export async function generateGcrAssessment(payload: any): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/generate_assessment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
     return handleResponse(response);
 }
