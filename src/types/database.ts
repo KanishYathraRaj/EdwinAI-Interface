@@ -53,6 +53,8 @@ export interface Subject {
   conversation_history?: ConversationEntry[];
   question_bank?: QuestionBank;
   syllabus?: Syllabus;
+  // generated documentation for the subject (optional)
+  documentation?: any;
 
   created_at: string;
   updated_at: string;
