@@ -1,10 +1,8 @@
 import type { Timestamp } from 'firebase/firestore';
 
 export interface Message {
-  id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
-  timestamp?: Timestamp | Date;
 }
 
 export interface Syllabus {
@@ -51,7 +49,7 @@ export interface Documentation {
 }
 
 export interface Assessment {
-  id: string; // The coursework ID from Classroom
+  id?: string; // This can be the coursework ID or form ID
   title: string;
   description?: string;
   course_id: string;
@@ -70,7 +68,7 @@ export interface Assessment {
   created_at: Timestamp;
 }
 
-export interface LatestQuiz extends Assessment {}
+export type LatestQuiz = Assessment;
 
 export interface Subject {
   id:string;
@@ -82,8 +80,8 @@ export interface Subject {
   documentation?: Documentation;
   resources?: string[];
   gcr_course_id?: string;
-  latest_quiz?: LatestQuiz; // This will be updated by the backend
-  assessments?: Assessment[]; // We'll manage this on the client
+  latest_quiz?: LatestQuiz;
+  assessments?: Assessment[];
 }
 
 export interface Chat extends Subject {}

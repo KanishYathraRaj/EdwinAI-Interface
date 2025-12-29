@@ -67,51 +67,20 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   }, [chat]);
   
   useEffect(() => {
-    // Fetch assessments when the assessments tab is active and a course is linked
-    if (activeView === 'assessments' && chat?.gcr_course_id && !selectedAssessment) {
-      const fetchAssessments = async () => {
-        setIsAssessmentsLoading(true);
-        try {
-          // We need a more reliable way to get the full assessment data.
-          // For now, we'll fetch coursework and assume the `latest_quiz` on the subject
-          // is one of them. This is a temporary workaround.
-          const coursework = await getGcrCoursework(chat.gcr_course_id!);
-          const assessmentsFromCoursework = coursework.map(cw => ({
-            ...chat.latest_quiz, // Spreading latest_quiz to get all details
-            id: cw.id,
-            coursework_id: cw.id,
-            title: cw.title,
-            description: cw.description,
-            max_points: cw.maxPoints,
-            responder_uri: cw.materials?.[0]?.link?.url || '',
-          })) as Assessment[];
-          
-          // A better approach would be to store all generated assessments in a subcollection
-          // in Firestore. For now, we'll just use the `latest_quiz` if it exists.
-          if (chat.latest_quiz && !assessmentsFromCoursework.find(a => a.id === chat.latest_quiz!.id)) {
-            setAssessments([chat.latest_quiz]);
-          } else if (assessmentsFromCoursework.length > 0) {
-            setAssessments(assessmentsFromCoursework);
-          } else {
-            setAssessments([]);
-          }
-
-        } catch (error) {
-          console.error("Failed to fetch assessments", error);
-          toast({
-            variant: "destructive",
-            title: "Failed to load assessments",
-            description: "Could not retrieve assessments from Google Classroom.",
-          });
-          setAssessments([]);
-        } finally {
-          setIsAssessmentsLoading(false);
-        }
-      };
-
-      fetchAssessments();
+    // When the assessments tab is active, check for the latest quiz data on the subject.
+    if (activeView === 'assessments' && !selectedAssessment) {
+      setIsAssessmentsLoading(true);
+      if (chat?.latest_quiz) {
+        // The `latest_quiz` object from Firestore has all we need.
+        // We'll wrap it in an array to represent our list of assessments.
+        // In a future version, you might fetch a list of all historical assessments.
+        setAssessments([chat.latest_quiz]);
+      } else {
+        setAssessments([]);
+      }
+      setIsAssessmentsLoading(false);
     }
-  }, [activeView, chat, toast, selectedAssessment]);
+}, [activeView, chat, selectedAssessment]);
 
   const handleGcrAuth = async () => {
     try {
@@ -500,7 +469,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
           </Button>
         </div>
         {assessments.map(assessment => (
-          <Card key={assessment.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedAssessment(assessment)}>
+          <Card key={assessment.id || assessment.coursework_id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedAssessment(assessment)}>
             <CardHeader>
               <CardTitle>{assessment.title}</CardTitle>
               <CardDescription>{assessment.description || 'No description'}</CardDescription>
