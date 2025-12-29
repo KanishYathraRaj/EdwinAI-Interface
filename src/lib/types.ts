@@ -49,7 +49,7 @@ export interface Documentation {
 }
 
 export interface Assessment {
-  id?: string; // This can be the coursework ID or form ID
+  id?: string;
   title: string;
   description?: string;
   course_id: string;
@@ -65,7 +65,7 @@ export interface Assessment {
       points: number;
     };
   };
-  created_at: Timestamp;
+  created_at?: Timestamp;
 }
 
 export type LatestQuiz = Assessment;
@@ -81,7 +81,6 @@ export interface Subject {
   resources?: string[];
   gcr_course_id?: string;
   latest_quiz?: LatestQuiz;
-  assessments?: Assessment[];
 }
 
 export interface Chat extends Subject {}
@@ -140,7 +139,7 @@ export interface StudentSubmission {
   assignedGrade?: number;
   submissionId: string;
   patched?: boolean;
-  details?: any; // Contains per-question scoring details
+  details?: any;
 }
 
 export interface GradeRefreshResult {

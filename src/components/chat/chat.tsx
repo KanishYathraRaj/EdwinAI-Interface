@@ -44,13 +44,11 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeView, setActiveView] = useState('research');
 
-  // New state for assessments view
   const [isCreatingAssessment, setIsCreatingAssessment] = useState(false);
   const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [isAssessmentsLoading, setIsAssessmentsLoading] = useState(false);
 
-  // State for GCR data
   const [isGcrAuthDone, setIsGcrAuthDone] = useState(false);
   const [gcrCourses, setGcrCourses] = useState<GcrCourse[]>([]);
   const [gcrStudents, setGcrStudents] = useState<GcrStudent[]>([]);
@@ -70,15 +68,18 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   }, [chat]);
   
   useEffect(() => {
-    if (activeView === 'assessments' && !selectedAssessment) {
-      setIsAssessmentsLoading(true);
-      if (chat?.latest_quiz) {
-        setAssessments([chat.latest_quiz]);
-      } else {
-        setAssessments([]);
+    const fetchAssessments = async () => {
+      if (activeView === 'assessments' && !selectedAssessment && chat?.gcr_course_id) {
+        setIsAssessmentsLoading(true);
+        if (chat.latest_quiz) {
+          setAssessments([chat.latest_quiz]);
+        } else {
+          setAssessments([]);
+        }
+        setIsAssessmentsLoading(false);
       }
-      setIsAssessmentsLoading(false);
-    }
+    };
+    fetchAssessments();
   }, [activeView, chat, selectedAssessment]);
   
   useEffect(() => {
@@ -450,7 +451,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
 
   const renderAssessmentsView = () => {
     if (selectedAssessment) {
-      return <AssessmentDetails assessment={selectedAssessment} students={gcrStudents} onBack={() => setSelectedAssessment(null)} />;
+      return <AssessmentDetails assessment={selectedAssessment} user={user} chat={chat} students={gcrStudents} onBack={() => setSelectedAssessment(null)} />;
     }
 
     if (isCreatingAssessment) {
@@ -460,7 +461,6 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
             chat={chat}
             onFinished={() => {
               setIsCreatingAssessment(false);
-              // You might want to trigger a refresh of the assessments list here
             }}
           />
         </div>

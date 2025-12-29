@@ -28,7 +28,14 @@ export async function getGcrStudents(courseId: string): Promise<GcrStudent[]> {
 }
 
 async function fetchPdfBlob(material: any, materialType: 'documentation' | 'question_bank'): Promise<Blob> {
-    const downloadUrl = `${API_BASE_URL}/download_question_bank`;
+    let downloadUrl = '';
+    if (materialType === 'question_bank') {
+        downloadUrl = `${API_BASE_URL}/download_question_bank`;
+    } else {
+        // Assuming a similar endpoint exists for documentation, or using a generic one
+        // You might need to create this endpoint in your backend
+        downloadUrl = `${API_BASE_URL}/download_documentation`;
+    }
 
     const response = await fetch(downloadUrl, {
         method: 'POST',
@@ -69,30 +76,28 @@ export async function generateGcrAssessment(payload: any): Promise<any> {
     return handleResponse(response);
 }
 
-export async function getGcrCoursework(courseId: string): Promise<GcrCourseWork[]> {
+export async function getGcrCoursework(courseId: string): Promise<Assessment[]> {
+    // This endpoint might not exist, but assuming it does for listing assessments
     const response = await fetch(`${API_BASE_URL}/gcr/courses/${courseId}/coursework`);
     const data = await handleResponse(response);
-    // Filter for assignments that are quizzes from our app
-    // This is a simple filter, you might need a more robust way to identify your quizzes
-    return data.coursework.filter((cw: GcrCourseWork) => cw.materials?.some(m => m.link?.url.includes('docs.google.com/forms')));
+    // You might need to filter or map this data to your Assessment type
+    return data.coursework;
 }
 
 
-export async function refreshGcrGrades(assessment: Assessment): Promise<GradeRefreshResult> {
+export async function refreshGcrGrades(assessment: Assessment, userId: string, subjectId: string): Promise<GradeRefreshResult> {
     if (!assessment.course_id || !assessment.coursework_id) {
         throw new Error("Missing course_id or coursework_id in assessment data.");
     }
-
-    const payload = {
-        form_id: assessment.form_id,
-        answer_key: assessment.answer_key,
-        identifier_mode: 'respondentEmail',
-    };
     
-    const response = await fetch(`${API_BASE_URL}/gcr/courses/${assessment.course_id}/coursework/${assessment.coursework_id}/refresh-grades`, {
-        method: 'POST',
+    const url = new URL(`${API_BASE_URL}/gcr/courses/${assessment.course_id}/coursework/${assessment.coursework_id}/grades`);
+    url.searchParams.append('user_id', userId);
+    url.searchParams.append('subject_id', subjectId);
+    url.searchParams.append('push_to_classroom', 'true');
+
+    const response = await fetch(url.toString(), {
+        method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
     });
 
     return handleResponse(response);

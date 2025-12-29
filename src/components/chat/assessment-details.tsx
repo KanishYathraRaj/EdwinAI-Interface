@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { Assessment, StudentSubmission, GcrStudent } from '@/lib/types';
+import type { Assessment, StudentSubmission, GcrStudent, Chat } from '@/lib/types';
+import type { User } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -14,19 +15,29 @@ import { Badge } from '../ui/badge';
 
 interface AssessmentDetailsProps {
   assessment: Assessment;
+  user: User | null;
+  chat: Chat;
   students: GcrStudent[];
   onBack: () => void;
 }
 
-export default function AssessmentDetails({ assessment, students, onBack }: AssessmentDetailsProps) {
+export default function AssessmentDetails({ assessment, user, chat, students, onBack }: AssessmentDetailsProps) {
   const [submissions, setSubmissions] = useState<StudentSubmission[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
   const handleRefreshGrades = async () => {
+    if (!user || !chat) {
+        toast({
+            variant: 'destructive',
+            title: 'Refresh Failed',
+            description: 'User or chat data is missing.',
+        });
+        return;
+    }
     setIsRefreshing(true);
     try {
-      const result = await refreshGcrGrades(assessment);
+      const result = await refreshGcrGrades(assessment, user.uid, chat.id);
       setSubmissions(result.updated);
       toast({
         title: 'Grades Refreshed',
