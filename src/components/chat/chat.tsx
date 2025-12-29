@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import type { Chat, Message, GcrCourse, Assessment, GcrCourseWork, StudentSubmission } from '@/lib/types';
+import type { Chat, Message, GcrCourse, Assessment, GcrCourseWork, StudentSubmission, GcrStudent } from '@/lib/types';
 import { ChatMessages } from '@/components/chat/chat-messages';
 import { ChatInput } from '@/components/chat/chat-input';
 import { useToast } from '@/hooks/use-toast';
@@ -22,7 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { getGcrCourses, uploadMaterialToGcr, generateGcrAssessment, getGcrCoursework } from '@/lib/gcr';
+import { getGcrCourses, uploadMaterialToGcr, generateGcrAssessment, getGcrCoursework, getGcrStudents } from '@/lib/gcr';
 import StudentsDisplay from './students-display';
 import GenerateAssessmentForm from './generate-assessment-form';
 import AssessmentDetails from './assessment-details';
@@ -50,9 +50,12 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [isAssessmentsLoading, setIsAssessmentsLoading] = useState(false);
 
+  // State for GCR data
   const [isGcrAuthDone, setIsGcrAuthDone] = useState(false);
   const [gcrCourses, setGcrCourses] = useState<GcrCourse[]>([]);
+  const [gcrStudents, setGcrStudents] = useState<GcrStudent[]>([]);
   const [isCourseListLoading, setIsCourseListLoading] = useState(false);
+  const [areStudentsLoading, setAreStudentsLoading] = useState(false);
 
 
   useEffect(() => {
@@ -67,20 +70,41 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   }, [chat]);
   
   useEffect(() => {
-    // When the assessments tab is active, check for the latest quiz data on the subject.
     if (activeView === 'assessments' && !selectedAssessment) {
       setIsAssessmentsLoading(true);
       if (chat?.latest_quiz) {
-        // The `latest_quiz` object from Firestore has all we need.
-        // We'll wrap it in an array to represent our list of assessments.
-        // In a future version, you might fetch a list of all historical assessments.
         setAssessments([chat.latest_quiz]);
       } else {
         setAssessments([]);
       }
       setIsAssessmentsLoading(false);
     }
-}, [activeView, chat, selectedAssessment]);
+  }, [activeView, chat, selectedAssessment]);
+  
+  useEffect(() => {
+    const fetchStudents = async () => {
+      if (chat?.gcr_course_id) {
+        setAreStudentsLoading(true);
+        try {
+          const studentData = await getGcrStudents(chat.gcr_course_id);
+          setGcrStudents(studentData);
+        } catch (error: any) {
+          toast({
+            variant: "destructive",
+            title: "Failed to Fetch Students",
+            description: error.message || "Could not fetch students for this course.",
+          });
+          setGcrStudents([]);
+        } finally {
+          setAreStudentsLoading(false);
+        }
+      } else {
+        setGcrStudents([]);
+      }
+    };
+    fetchStudents();
+  }, [chat?.gcr_course_id, toast]);
+
 
   const handleGcrAuth = async () => {
     try {
@@ -426,7 +450,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
 
   const renderAssessmentsView = () => {
     if (selectedAssessment) {
-      return <AssessmentDetails assessment={selectedAssessment} onBack={() => setSelectedAssessment(null)} />;
+      return <AssessmentDetails assessment={selectedAssessment} students={gcrStudents} onBack={() => setSelectedAssessment(null)} />;
     }
 
     if (isCreatingAssessment) {
@@ -633,7 +657,12 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
 
             {activeView === 'students' && (
               <div className="p-4">
-                <StudentsDisplay gcrCourseId={chat.gcr_course_id} onAuth={handleGcrAuth} />
+                <StudentsDisplay 
+                  gcrCourseId={chat.gcr_course_id} 
+                  students={gcrStudents}
+                  isLoading={areStudentsLoading}
+                  onAuth={handleGcrAuth}
+                />
               </div>
             )}
         </div>

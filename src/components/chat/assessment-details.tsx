@@ -8,33 +8,20 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RefreshCw, ArrowLeft, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { refreshGcrGrades, getGcrStudents } from '@/lib/gcr';
+import { refreshGcrGrades } from '@/lib/gcr';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
 
 interface AssessmentDetailsProps {
   assessment: Assessment;
+  students: GcrStudent[];
   onBack: () => void;
 }
 
-export default function AssessmentDetails({ assessment, onBack }: AssessmentDetailsProps) {
+export default function AssessmentDetails({ assessment, students, onBack }: AssessmentDetailsProps) {
   const [submissions, setSubmissions] = useState<StudentSubmission[]>([]);
-  const [students, setStudents] = useState<GcrStudent[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
-
-  useEffect(() => {
-    // Initially fetch students to map names to submissions
-    const fetchStudents = async () => {
-      try {
-        const studentData = await getGcrStudents(assessment.course_id);
-        setStudents(studentData);
-      } catch (error) {
-        console.error("Failed to fetch students:", error);
-      }
-    };
-    fetchStudents();
-  }, [assessment.course_id]);
 
   const handleRefreshGrades = async () => {
     setIsRefreshing(true);

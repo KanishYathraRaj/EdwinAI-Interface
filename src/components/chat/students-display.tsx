@@ -1,10 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
 import type { GcrStudent } from '@/lib/types';
-import { getGcrStudents } from '@/lib/gcr';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -12,36 +9,13 @@ import { User } from 'lucide-react';
 
 interface StudentsDisplayProps {
   gcrCourseId?: string;
+  students: GcrStudent[];
+  isLoading: boolean;
   onAuth: () => void;
 }
 
-export default function StudentsDisplay({ gcrCourseId, onAuth }: StudentsDisplayProps) {
-  const [students, setStudents] = useState<GcrStudent[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchStudents = async () => {
-      if (!gcrCourseId) return;
-
-      setIsLoading(true);
-      try {
-        const studentData = await getGcrStudents(gcrCourseId);
-        setStudents(studentData);
-      } catch (error: any) {
-        toast({
-          variant: "destructive",
-          title: "Failed to Fetch Students",
-          description: error.message || "Could not fetch students for this course.",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStudents();
-  }, [gcrCourseId, toast]);
-
+export default function StudentsDisplay({ gcrCourseId, students, isLoading, onAuth }: StudentsDisplayProps) {
+  
   if (!gcrCourseId) {
     return (
       <div className="flex flex-col items-center justify-center h-full pt-20 text-center">
