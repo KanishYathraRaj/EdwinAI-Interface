@@ -50,14 +50,27 @@ export interface Documentation {
   units: DocumentationUnit[];
 }
 
-export interface LatestQuiz {
+export interface Assessment {
+  id: string; // The coursework ID from Classroom
   title: string;
+  description?: string;
   course_id: string;
   form_id: string;
   responder_uri: string;
   coursework_id: string;
+  max_points?: number;
+  identifier_mode?: 'respondentEmail' | 'first_question';
+  identifier_question_id?: string;
+  answer_key?: {
+    [questionId: string]: {
+      correct: string;
+      points: number;
+    };
+  };
   created_at: Timestamp;
 }
+
+export interface LatestQuiz extends Assessment {}
 
 export interface Subject {
   id:string;
@@ -69,7 +82,8 @@ export interface Subject {
   documentation?: Documentation;
   resources?: string[];
   gcr_course_id?: string;
-  latest_quiz?: LatestQuiz;
+  latest_quiz?: LatestQuiz; // This will be updated by the backend
+  assessments?: Assessment[]; // We'll manage this on the client
 }
 
 export interface Chat extends Subject {}
@@ -111,4 +125,29 @@ export interface GcrStudent {
     };
     photoUrl: string;
   };
+}
+
+export interface GcrCourseWork {
+  id: string;
+  title: string;
+  description?: string;
+  materials: { link: { url: string } }[];
+  maxPoints?: number;
+  creationTime: string;
+  updateTime: string;
+}
+
+export interface StudentSubmission {
+  userId: string;
+  assignedGrade?: number;
+  submissionId: string;
+  patched?: boolean;
+  details?: any; // Contains per-question scoring details
+}
+
+export interface GradeRefreshResult {
+  updated_count: number;
+  skipped_count: number;
+  updated: StudentSubmission[];
+  skipped: any[];
 }

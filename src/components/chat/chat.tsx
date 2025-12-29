@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import type { Chat, Message, GcrCourse } from '@/lib/types';
+import type { Chat, Message, GcrCourse, Assessment, GcrCourseWork, StudentSubmission } from '@/lib/types';
 import { ChatMessages } from '@/components/chat/chat-messages';
 import { ChatInput } from '@/components/chat/chat-input';
 import { useToast } from '@/hooks/use-toast';
@@ -15,16 +15,17 @@ import QuestionBankDisplay from './question-bank-display';
 import DocumentationDisplay from './documentation-display';
 import { cn } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '../ui/card';
-import { Download, Upload, Link as LinkIcon, ExternalLink } from 'lucide-react';
+import { Download, Upload, Link as LinkIcon, ExternalLink, PlusCircle, Pencil } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { getGcrCourses, uploadMaterialToGcr, generateGcrAssessment } from '@/lib/gcr';
+import { getGcrCourses, uploadMaterialToGcr, generateGcrAssessment, getGcrCoursework } from '@/lib/gcr';
 import StudentsDisplay from './students-display';
 import GenerateAssessmentForm from './generate-assessment-form';
+import AssessmentDetails from './assessment-details';
 
 interface ChatProps {
   chat: Chat | undefined;
@@ -43,6 +44,12 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeView, setActiveView] = useState('research');
 
+  // New state for assessments view
+  const [isCreatingAssessment, setIsCreatingAssessment] = useState(false);
+  const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [isAssessmentsLoading, setIsAssessmentsLoading] = useState(false);
+
   const [isGcrAuthDone, setIsGcrAuthDone] = useState(false);
   const [gcrCourses, setGcrCourses] = useState<GcrCourse[]>([]);
   const [isCourseListLoading, setIsCourseListLoading] = useState(false);
@@ -54,15 +61,60 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     } else {
       setMessages([]);
     }
-    // When chat changes, default back to research view
     setActiveView('research');
+    setSelectedAssessment(null);
+    setIsCreatingAssessment(false);
   }, [chat]);
   
+  useEffect(() => {
+    // Fetch assessments when the assessments tab is active and a course is linked
+    if (activeView === 'assessments' && chat?.gcr_course_id && !selectedAssessment) {
+      const fetchAssessments = async () => {
+        setIsAssessmentsLoading(true);
+        try {
+          // We need a more reliable way to get the full assessment data.
+          // For now, we'll fetch coursework and assume the `latest_quiz` on the subject
+          // is one of them. This is a temporary workaround.
+          const coursework = await getGcrCoursework(chat.gcr_course_id!);
+          const assessmentsFromCoursework = coursework.map(cw => ({
+            ...chat.latest_quiz, // Spreading latest_quiz to get all details
+            id: cw.id,
+            coursework_id: cw.id,
+            title: cw.title,
+            description: cw.description,
+            max_points: cw.maxPoints,
+            responder_uri: cw.materials?.[0]?.link?.url || '',
+          })) as Assessment[];
+          
+          // A better approach would be to store all generated assessments in a subcollection
+          // in Firestore. For now, we'll just use the `latest_quiz` if it exists.
+          if (chat.latest_quiz && !assessmentsFromCoursework.find(a => a.id === chat.latest_quiz!.id)) {
+            setAssessments([chat.latest_quiz]);
+          } else if (assessmentsFromCoursework.length > 0) {
+            setAssessments(assessmentsFromCoursework);
+          } else {
+            setAssessments([]);
+          }
+
+        } catch (error) {
+          console.error("Failed to fetch assessments", error);
+          toast({
+            variant: "destructive",
+            title: "Failed to load assessments",
+            description: "Could not retrieve assessments from Google Classroom.",
+          });
+          setAssessments([]);
+        } finally {
+          setIsAssessmentsLoading(false);
+        }
+      };
+
+      fetchAssessments();
+    }
+  }, [activeView, chat, toast, selectedAssessment]);
+
   const handleGcrAuth = async () => {
-    // This function is less important now as auth is triggered by linking/fetching
-    // but can be kept for a manual auth trigger if needed.
     try {
-      // await triggerGcrAuth();
       setIsGcrAuthDone(true);
       toast({
         title: "Google Classroom Authenticated",
@@ -151,7 +203,6 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
       content: content,
     };
   
-    // Optimistically update the UI with the user's message
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setIsLoading(true);
@@ -180,7 +231,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
       
       const assistantMessage: Message = {
           role: 'assistant',
-          content: responseData.response,
+          content: responseData.reply,
       };
 
       const finalMessages = [...updatedMessages, assistantMessage];
@@ -193,7 +244,6 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
         description: 'Failed to get a response from the AI. Please try again.',
         variant: 'destructive',
       });
-      // Revert to previous messages on error
       setMessages(messages);
     } finally {
       setIsLoading(false);
@@ -394,6 +444,8 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
 
   const handleTabClick = (tab: string) => {
     setActiveView(tab);
+    setSelectedAssessment(null);
+    setIsCreatingAssessment(false);
   };
 
   const navItems = ['Research', 'Documentation', 'Syllabus', 'Question Bank', 'Assessments', 'Students'];
@@ -402,6 +454,66 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     if (!chat.gcr_course_id || gcrCourses.length === 0) return null;
     return gcrCourses.find(c => c.id === chat.gcr_course_id)?.name;
   }, [chat.gcr_course_id, gcrCourses]);
+
+  const renderAssessmentsView = () => {
+    if (selectedAssessment) {
+      return <AssessmentDetails assessment={selectedAssessment} onBack={() => setSelectedAssessment(null)} />;
+    }
+
+    if (isCreatingAssessment) {
+      return (
+        <div className="p-4">
+          <GenerateAssessmentForm
+            chat={chat}
+            onFinished={() => {
+              setIsCreatingAssessment(false);
+              // You might want to trigger a refresh of the assessments list here
+            }}
+          />
+        </div>
+      );
+    }
+
+    if (isAssessmentsLoading) {
+      return <div className="p-4 text-center">Loading assessments...</div>;
+    }
+
+    if (assessments.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full pt-20 text-center">
+          <p className="text-muted-foreground mb-4">No assessments created yet for this subject.</p>
+          <p className="text-sm text-muted-foreground mb-8">"The beautiful thing about learning is that no one can take it away from you." - B.B. King</p>
+          <Button size="lg" onClick={() => setIsCreatingAssessment(true)}>
+            <PlusCircle className="mr-2 h-5 w-5" />
+            Create Your First Assessment
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-4 space-y-4">
+        <div className="flex justify-end">
+          <Button onClick={() => setIsCreatingAssessment(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Create New Assessment
+          </Button>
+        </div>
+        {assessments.map(assessment => (
+          <Card key={assessment.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedAssessment(assessment)}>
+            <CardHeader>
+              <CardTitle>{assessment.title}</CardTitle>
+              <CardDescription>{assessment.description || 'No description'}</CardDescription>
+            </CardHeader>
+            <CardFooter className="text-sm text-muted-foreground">
+              <p>Max Points: {assessment.max_points || 'Not set'}</p>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
 
   return (
     <div className="flex flex-col h-screen">
@@ -546,34 +658,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
             
             {activeView === 'assessments' && (
               <div className="p-4">
-                <div className="grid gap-6">
-                  <GenerateAssessmentForm chat={chat} />
-                  
-                  {chat.latest_quiz && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Latest Assessment</CardTitle>
-                        <CardDescription>
-                          This is the most recent assessment generated for this subject.
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="font-semibold">{chat.latest_quiz.title}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Posted to Google Classroom.
-                        </p>
-                      </CardContent>
-                      <CardFooter>
-                        <a href={chat.latest_quiz.responder_uri} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline">
-                            <ExternalLink className="mr-2 h-4 w-4" />
-                            View Form
-                          </Button>
-                        </a>
-                      </CardFooter>
-                    </Card>
-                  )}
-                </div>
+                {renderAssessmentsView()}
               </div>
             )}
 

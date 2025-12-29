@@ -1,6 +1,6 @@
 'use client';
 
-import { GcrCourse, GcrStudent } from "./types";
+import { GcrCourse, GcrStudent, GcrCourseWork, GradeRefreshResult, Assessment } from "./types";
 
 const API_BASE_URL = 'http://127.0.0.1:5000';
 
@@ -9,7 +9,6 @@ async function handleResponse(response: Response) {
         const errorData = await response.json().catch(() => ({ error: 'API call failed with no error details.' }));
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
-    // For file downloads, we handle the blob directly in the calling function
     if (response.headers.get('Content-Type')?.includes('application/pdf')) {
         return response;
     }
@@ -29,13 +28,7 @@ export async function getGcrStudents(courseId: string): Promise<GcrStudent[]> {
 }
 
 async function fetchPdfBlob(material: any, materialType: 'documentation' | 'question_bank'): Promise<Blob> {
-    // This endpoint should return a PDF blob
-    const downloadUrl = `${API_BASE_URL}/download_question_bank`; // Assuming one endpoint for now
-    
-    // In a real app you might have different endpoints for different material types
-    // const downloadUrl = materialType === 'documentation' 
-    //   ? `${API_BASE_URL}/download_documentation`
-    //   : `${API_BASE_URL}/download_question_bank`;
+    const downloadUrl = `${API_BASE_URL}/download_question_bank`;
 
     const response = await fetch(downloadUrl, {
         method: 'POST',
@@ -51,13 +44,10 @@ async function fetchPdfBlob(material: any, materialType: 'documentation' | 'ques
 }
 
 export async function uploadMaterialToGcr(courseId: string, material: any, materialType: 'documentation' | 'question_bank'): Promise<any> {
-    // 1. Fetch the formatted PDF from the backend first
     const pdfBlob = await fetchPdfBlob(material, materialType);
     
-    // 2. Create a File object from the blob
     const materialFile = new File([pdfBlob], `${material.course_title.replace(/\s+/g, '_')}.pdf`, { type: 'application/pdf' });
     
-    // 3. Upload the actual PDF file to GCR
     const formData = new FormData();
     formData.append('file', materialFile);
     formData.append('title', material.course_title);
@@ -76,5 +66,35 @@ export async function generateGcrAssessment(payload: any): Promise<any> {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
     });
+    return handleResponse(response);
+}
+
+export async function getGcrCoursework(courseId: string): Promise<GcrCourseWork[]> {
+    const response = await fetch(`${API_BASE_URL}/gcr/courses/${courseId}/coursework`);
+    const data = await handleResponse(response);
+    // Filter for assignments that are quizzes from our app
+    // This is a simple filter, you might need a more robust way to identify your quizzes
+    return data.coursework.filter((cw: GcrCourseWork) => cw.materials?.some(m => m.link?.url.includes('docs.google.com/forms')));
+}
+
+
+export async function refreshGcrGrades(assessment: Assessment): Promise<GradeRefreshResult> {
+    if (!assessment.course_id || !assessment.coursework_id) {
+        throw new Error("Missing course_id or coursework_id in assessment data.");
+    }
+
+    const payload = {
+        form_id: assessment.form_id,
+        answer_key: assessment.answer_key,
+        identifier_mode: assessment.identifier_mode,
+        identifier_question_id: assessment.identifier_question_id,
+    };
+    
+    const response = await fetch(`${API_BASE_URL}/gcr/courses/${assessment.course_id}/coursework/${assessment.coursework_id}/refresh-grades`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+
     return handleResponse(response);
 }

@@ -23,7 +23,6 @@ import { useState } from 'react';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Switch } from '../ui/switch';
-import { ExternalLink } from 'lucide-react';
 
 const assessmentFormSchema = z.object({
   quiz_title: z.string().min(3, { message: 'Title must be at least 3 characters.' }),
@@ -39,9 +38,10 @@ type AssessmentFormValues = z.infer<typeof assessmentFormSchema>;
 
 interface GenerateAssessmentFormProps {
   chat: Chat;
+  onFinished: () => void;
 }
 
-export default function GenerateAssessmentForm({ chat }: GenerateAssessmentFormProps) {
+export default function GenerateAssessmentForm({ chat, onFinished }: GenerateAssessmentFormProps) {
   const { user } = useUser();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -79,14 +79,14 @@ export default function GenerateAssessmentForm({ chat }: GenerateAssessmentFormP
         state: "PUBLISHED"
       };
 
-      const result = await generateGcrAssessment(payload);
+      await generateGcrAssessment(payload);
       
       toast({
         title: 'Assessment Generated Successfully!',
-        description: `${result.classroom_coursework.title} has been posted to Google Classroom.`,
+        description: `${values.quiz_title} has been posted to Google Classroom.`,
       });
       
-      form.reset();
+      onFinished(); // Call the callback to go back to the list
 
     } catch (error: any) {
       toast({
@@ -105,7 +105,6 @@ export default function GenerateAssessmentForm({ chat }: GenerateAssessmentFormP
         <p className="text-muted-foreground mb-4">
           Please link a Google Classroom course to this subject before generating an assessment.
         </p>
-        <Button variant="outline">Go to Settings to Link</Button>
       </div>
     );
   }
