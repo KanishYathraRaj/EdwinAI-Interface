@@ -86,8 +86,7 @@ export async function refreshGcrGrades(assessment: Assessment): Promise<GradeRef
     const payload = {
         form_id: assessment.form_id,
         answer_key: assessment.answer_key,
-        identifier_mode: assessment.identifier_mode,
-        identifier_question_id: assessment.identifier_question_id,
+        identifier_mode: 'respondentEmail',
     };
     
     const response = await fetch(`${API_BASE_URL}/gcr/courses/${assessment.course_id}/coursework/${assessment.coursework_id}/refresh-grades`, {
