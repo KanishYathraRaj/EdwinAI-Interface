@@ -231,11 +231,11 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
       const finalMessages = [...updatedMessages, assistantMessage];
       setMessages(finalMessages);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending message:', error);
       toast({
         title: 'An error occurred',
-        description: 'Failed to get a response from the AI. Please try again.',
+        description: error.message || 'Failed to get a response from the AI. Please try again.',
         variant: 'destructive',
       });
       setMessages(messages);
