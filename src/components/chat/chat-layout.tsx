@@ -64,7 +64,7 @@ export function ChatLayout() {
         formData.append('file', file);
         
         try {
-          const endpoint = '/api/upsert_syllabus';
+          const endpoint = 'http://127.0.0.1:5000/upsert_syllabus';
           const response = await fetch(endpoint, {
             method: 'POST',
             body: formData,

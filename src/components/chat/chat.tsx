@@ -149,30 +149,6 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
       setIsCourseListLoading(false);
     }
   };
-
-  const handleTestConnection = async () => {
-    try {
-      const endpoint = '/api/';
-      const response = await fetch(endpoint, {
-        method: 'GET',
-      });
-      const data = await handleApiResponse(response, endpoint);
-      toast({
-        title: 'Backend Connection Successful!',
-        description: (
-          <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-            <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-          </pre>
-        ),
-      });
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Backend Connection Failed',
-        description: error.message || 'Could not connect to the backend.',
-      });
-    }
-  };
   
   const handleLinkCourse = async (courseId: string) => {
     if (!chat || !user) return;
@@ -237,7 +213,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     setIsLoading(true);
   
     try {
-      const endpoint = '/api/ask';
+      const endpoint = 'http://127.0.0.1:5000/ask';
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -296,7 +272,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     });
 
     try {
-      const endpoint = '/api/upsert_resources';
+      const endpoint = 'http://127.0.0.1:5000/upsert_resources';
       const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
@@ -322,7 +298,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
 
     setIsGenerating(true);
     try {
-      const endpoint = '/api/generate_question_bank';
+      const endpoint = 'http://127.0.0.1:5000/generate_question_bank';
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -366,7 +342,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
 
     setIsDownloading(true);
     try {
-      const endpoint = '/api/download_question_bank';
+      const endpoint = 'http://127.0.0.1:5000/download_question_bank';
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -421,7 +397,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
 
     setIsGeneratingDocs(true);
     try {
-      const endpoint = '/api/generate_documentation';
+      const endpoint = 'http://127.0.0.1:5000/generate_documentation';
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -551,9 +527,6 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={handleTestConnection}>
-              Test Backend
-            </Button>
             {linkedCourseName ? (
               <span className="text-sm text-muted-foreground">Linked to: <strong>{linkedCourseName}</strong></span>
             ) : (

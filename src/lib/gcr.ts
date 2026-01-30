@@ -3,7 +3,7 @@
 import { GcrCourse, GcrStudent, GcrCourseWork, GradeRefreshResult, Assessment } from "./types";
 import { handleApiResponse } from "./utils";
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = 'http://127.0.0.1:5000';
 
 
 export async function triggerGcrAuth(): Promise<any> {
@@ -87,7 +87,7 @@ export async function refreshGcrGrades(assessment: Assessment, userId: string, s
         throw new Error("Missing course_id or coursework_id in assessment data.");
     }
     
-    const url = new URL(`${window.location.origin}${API_BASE_URL}/gcr/courses/${assessment.course_id}/coursework/${assessment.coursework_id}/grades`);
+    const url = new URL(`${API_BASE_URL}/gcr/courses/${assessment.course_id}/coursework/${assessment.coursework_id}/grades`);
     url.searchParams.append('user_id', userId);
     url.searchParams.append('subject_id', subjectId);
     url.searchParams.append('push_to_classroom', 'true');
