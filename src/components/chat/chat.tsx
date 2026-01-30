@@ -202,7 +202,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     setIsLoading(true);
   
     try {
-      const response = await fetch('http://127.0.0.1:5000/ask', {
+      const response = await fetch('/api/ask', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -265,7 +265,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     });
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/upsert_resources', {
+      const response = await fetch('/api/upsert_resources', {
         method: 'POST',
         body: formData,
       });
@@ -295,7 +295,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
 
     setIsGenerating(true);
     try {
-      const response = await fetch('http://127.0.0.1:5000/generate_question_bank', {
+      const response = await fetch('/api/generate_question_bank', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -341,7 +341,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
 
     setIsDownloading(true);
     try {
-      const response = await fetch('http://127.0.0.1:5000/download_question_bank', {
+      const response = await fetch('/api/download_question_bank', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -398,7 +398,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
 
     setIsGeneratingDocs(true);
     try {
-      const response = await fetch('http://127.0.0.1:5000/generate_documentation', {
+      const response = await fetch('/api/generate_documentation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

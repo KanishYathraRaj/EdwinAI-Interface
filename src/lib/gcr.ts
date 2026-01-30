@@ -2,7 +2,7 @@
 
 import { GcrCourse, GcrStudent, GcrCourseWork, GradeRefreshResult, Assessment } from "./types";
 
-const API_BASE_URL = 'http://127.0.0.1:5000';
+const API_BASE_URL = '/api';
 
 async function handleResponse(response: Response) {
     if (!response.ok) {
@@ -76,7 +76,7 @@ export async function generateGcrAssessment(payload: any): Promise<any> {
     return handleResponse(response);
 }
 
-export async function getGcrCoursework(courseId: string): Promise<Assessment[]> {
+export async function getGcrCoursework(courseId: string): Promise<GcrCourseWork[]> {
     // This endpoint might not exist, but assuming it does for listing assessments
     const response = await fetch(`${API_BASE_URL}/gcr/courses/${courseId}/coursework`);
     const data = await handleResponse(response);
@@ -90,7 +90,7 @@ export async function refreshGcrGrades(assessment: Assessment, userId: string, s
         throw new Error("Missing course_id or coursework_id in assessment data.");
     }
     
-    const url = new URL(`${API_BASE_URL}/gcr/courses/${assessment.course_id}/coursework/${assessment.coursework_id}/grades`);
+    const url = new URL(`${window.location.origin}${API_BASE_URL}/gcr/courses/${assessment.course_id}/coursework/${assessment.coursework_id}/grades`);
     url.searchParams.append('user_id', userId);
     url.searchParams.append('subject_id', subjectId);
     url.searchParams.append('push_to_classroom', 'true');
