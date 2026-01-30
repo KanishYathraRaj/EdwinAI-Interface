@@ -10,6 +10,7 @@ import { useAuth, useCollection, useFirestore, useMemoFirebase, useUser } from '
 import { useRouter } from 'next/navigation';
 import { collection, serverTimestamp, addDoc, doc, deleteDoc, updateDoc, orderBy, query } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { handleApiResponse } from '@/lib/utils';
 
 export function ChatLayout() {
   const { user, isUserLoading } = useUser();
@@ -63,15 +64,13 @@ export function ChatLayout() {
         formData.append('file', file);
         
         try {
-          const response = await fetch('/api/upsert_syllabus', {
+          const endpoint = '/api/upsert_syllabus';
+          const response = await fetch(endpoint, {
             method: 'POST',
             body: formData,
           });
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'API call failed');
-          }
+          await handleApiResponse(response, endpoint);
           
           toast({
             title: "Syllabus Uploaded",

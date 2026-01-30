@@ -13,7 +13,7 @@ import { Button } from '../ui/button';
 import SyllabusDisplay from './syllabus-display';
 import QuestionBankDisplay from './question-bank-display';
 import DocumentationDisplay from './documentation-display';
-import { cn } from '@/lib/utils';
+import { cn, handleApiResponse } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '../ui/card';
 import { Download, Upload, Link as LinkIcon, ExternalLink, PlusCircle, Pencil } from 'lucide-react';
 import {
@@ -71,16 +71,26 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     const fetchAssessments = async () => {
       if (activeView === 'assessments' && !selectedAssessment && chat?.gcr_course_id) {
         setIsAssessmentsLoading(true);
-        if (chat.latest_quiz) {
-          setAssessments([chat.latest_quiz]);
-        } else {
+        try {
+          if (chat.latest_quiz) {
+            setAssessments([chat.latest_quiz]);
+          } else {
+            setAssessments([]);
+          }
+        } catch (error: any) {
+          toast({
+            variant: "destructive",
+            title: "Failed to Fetch Assessments",
+            description: error.message || "Could not fetch assessments for this course.",
+          });
           setAssessments([]);
+        } finally {
+          setIsAssessmentsLoading(false);
         }
-        setIsAssessmentsLoading(false);
       }
     };
     fetchAssessments();
-  }, [activeView, chat, selectedAssessment]);
+  }, [activeView, chat, selectedAssessment, toast]);
   
   useEffect(() => {
     const fetchStudents = async () => {
@@ -113,14 +123,13 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
       setIsGcrAuthDone(true);
       toast({
         title: "Google Classroom Authenticated",
-        description: "You can now link courses and manage materials. Try fetching courses again.",
+        description: "Check your backend console for a URL to visit to complete authentication, then try fetching courses again.",
       });
-      handleFetchGcrCourses();
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "GCR Auth Failed",
-        description: error.message || "Could not authenticate with Google Classroom. Check the backend server console for instructions.",
+        description: error.message || "Could not authenticate with Google Classroom.",
       });
     }
   };
@@ -204,7 +213,8 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     setIsLoading(true);
   
     try {
-      const response = await fetch('/api/ask', {
+      const endpoint = '/api/ask';
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -218,12 +228,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
         }),
       });
   
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'API call failed');
-      }
-  
-      const responseData = await response.json();
+      const responseData = await handleApiResponse(response, endpoint);
       
       const assistantMessage: Message = {
           role: 'assistant',
@@ -267,17 +272,13 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     });
 
     try {
-      const response = await fetch('/api/upsert_resources', {
+      const endpoint = '/api/upsert_resources';
+      const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'API call failed');
-      }
-
-      const responseData = await response.json();
+      const responseData = await handleApiResponse(response, endpoint);
       toast({
         title: 'Upload Successful',
         description: responseData.message || 'Resource has been processed.',
@@ -297,7 +298,8 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
 
     setIsGenerating(true);
     try {
-      const response = await fetch('/api/generate_question_bank', {
+      const endpoint = '/api/generate_question_bank';
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -309,10 +311,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'API call failed');
-      }
+      await handleApiResponse(response, endpoint);
       
       toast({
         title: "Question Bank Generation Started",
@@ -343,7 +342,8 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
 
     setIsDownloading(true);
     try {
-      const response = await fetch('/api/download_question_bank', {
+      const endpoint = '/api/download_question_bank';
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -351,18 +351,15 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
         body: JSON.stringify(chat.question_bank),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'API call failed');
-      }
+      const handledResponse = await handleApiResponse(response, endpoint);
       
-      const blob = await response.blob();
+      const blob = await handledResponse.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
       
-      const contentDisposition = response.headers.get('Content-Disposition');
+      const contentDisposition = handledResponse.headers.get('Content-Disposition');
       let filename = `${chat.question_bank.course_title.replace(/\s+/g, '_') || 'question_bank'}.pdf`;
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename="(.+)"/);
@@ -400,7 +397,8 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
 
     setIsGeneratingDocs(true);
     try {
-      const response = await fetch('/api/generate_documentation', {
+      const endpoint = '/api/generate_documentation';
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -412,10 +410,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'API call failed');
-      }
+      await handleApiResponse(response, endpoint);
 
       toast({
         title: "Documentation Generation Started",
@@ -552,7 +547,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
                       </DropdownMenuItem>
                     ))
                   ) : (
-                     <DropdownMenuItem disabled>No courses found.</DropdownMenuItem>
+                     <DropdownMenuItem onClick={handleGcrAuth}>Connect to Classroom</DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
