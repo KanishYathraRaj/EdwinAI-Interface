@@ -22,7 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { getGcrCourses, uploadMaterialToGcr, generateGcrAssessment, getGcrCoursework, getGcrStudents } from '@/lib/gcr';
+import { getGcrCourses, uploadMaterialToGcr, generateGcrAssessment, getGcrCoursework, getGcrStudents, triggerGcrAuth } from '@/lib/gcr';
 import StudentsDisplay from './students-display';
 import GenerateAssessmentForm from './generate-assessment-form';
 import AssessmentDetails from './assessment-details';
@@ -109,16 +109,18 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
 
   const handleGcrAuth = async () => {
     try {
+      await triggerGcrAuth();
       setIsGcrAuthDone(true);
       toast({
         title: "Google Classroom Authenticated",
-        description: "You can now link courses and manage materials.",
+        description: "You can now link courses and manage materials. Try fetching courses again.",
       });
+      handleFetchGcrCourses();
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "GCR Auth Failed",
-        description: error.message || "Could not authenticate with Google Classroom.",
+        description: error.message || "Could not authenticate with Google Classroom. Check the backend server console for instructions.",
       });
     }
   };

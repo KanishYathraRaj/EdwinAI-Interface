@@ -15,6 +15,11 @@ async function handleResponse(response: Response) {
     return response.json();
 }
 
+export async function triggerGcrAuth(): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/gcr/auth`, { method: 'POST' });
+    return handleResponse(response);
+}
+
 export async function getGcrCourses(): Promise<GcrCourse[]> {
     const response = await fetch(`${API_BASE_URL}/gcr/courses`);
     const data = await handleResponse(response);
