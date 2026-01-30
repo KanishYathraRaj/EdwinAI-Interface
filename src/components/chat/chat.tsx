@@ -602,10 +602,6 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <CardTitle>{chat.documentation.course_title}</CardTitle>
-                                 <Button variant="outline" size="sm" onClick={() => handleUploadToGcr('documentation')} disabled={isUploading || !chat.gcr_course_id}>
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    {isUploading ? 'Uploading...' : 'Upload to GCR'}
-                                </Button>
                             </CardHeader>
                             <CardContent>
                                 <DocumentationDisplay documentation={chat.documentation} />
