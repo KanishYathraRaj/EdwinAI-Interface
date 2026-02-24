@@ -31,8 +31,6 @@ async function fetchPdfBlob(material: any, materialType: 'documentation' | 'ques
     if (materialType === 'question_bank') {
         endpoint = `${API_BASE_URL}/download_question_bank`;
     } else {
-        // Assuming a similar endpoint exists for documentation, or using a generic one
-        // You might need to create this endpoint in your backend
         endpoint = `${API_BASE_URL}/download_documentation`;
     }
 
@@ -42,15 +40,20 @@ async function fetchPdfBlob(material: any, materialType: 'documentation' | 'ques
         body: JSON.stringify(material),
     });
 
-    const handledResponse = await handleApiResponse(response, endpoint);
-    return handledResponse.blob();
+    // Use raw response.blob() — do NOT pass through handleApiResponse,
+    // which would consume the response body as text/JSON first.
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`PDF download failed (${response.status}): ${errorText}`);
+    }
+    return response.blob();
 }
 
 export async function uploadMaterialToGcr(courseId: string, material: any, materialType: 'documentation' | 'question_bank'): Promise<any> {
     const pdfBlob = await fetchPdfBlob(material, materialType);
-    
+
     const materialFile = new File([pdfBlob], `${material.course_title.replace(/\s+/g, '_')}.pdf`, { type: 'application/pdf' });
-    
+
     const formData = new FormData();
     formData.append('file', materialFile);
     formData.append('title', material.course_title);
@@ -60,7 +63,7 @@ export async function uploadMaterialToGcr(courseId: string, material: any, mater
         method: 'POST',
         body: formData,
     });
-    
+
     return handleApiResponse(response, endpoint);
 }
 
@@ -86,7 +89,7 @@ export async function refreshGcrGrades(assessment: Assessment, userId: string, s
     if (!assessment.course_id || !assessment.coursework_id) {
         throw new Error("Missing course_id or coursework_id in assessment data.");
     }
-    
+
     const url = new URL(`${API_BASE_URL}/gcr/courses/${assessment.course_id}/coursework/${assessment.coursework_id}/grades`);
     url.searchParams.append('user_id', userId);
     url.searchParams.append('subject_id', subjectId);

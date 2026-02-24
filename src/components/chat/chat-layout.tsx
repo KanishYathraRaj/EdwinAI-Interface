@@ -7,16 +7,14 @@ import ChatSidebar from '@/components/chat/chat-sidebar';
 import ChatComponent from '@/components/chat/chat';
 import { summarizeChatHistory } from '@/ai/flows/summarize-chat-history';
 import { useAuth, useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { useRouter } from 'next/navigation';
 import { collection, serverTimestamp, addDoc, doc, deleteDoc, updateDoc, orderBy, query } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { handleApiResponse } from '@/lib/utils';
 
 export function ChatLayout() {
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
   const auth = useAuth();
   const firestore = useFirestore();
-  const router = useRouter();
   const { toast } = useToast();
 
   const subjectsQuery = useMemoFirebase(() => {
@@ -30,12 +28,6 @@ export function ChatLayout() {
   const { data: subjects, isLoading: areSubjectsLoading } = useCollection<Subject>(subjectsQuery);
 
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!user && !isUserLoading) {
-      router.push('/login');
-    }
-  }, [user, isUserLoading, router]);
 
   useEffect(() => {
     if (!activeChatId && subjects && subjects.length > 0) {
@@ -62,7 +54,7 @@ export function ChatLayout() {
         formData.append('user_id', user.uid);
         formData.append('subject_id', subjectId);
         formData.append('file', file);
-        
+
         try {
           const endpoint = 'http://127.0.0.1:5000/upsert_syllabus';
           const response = await fetch(endpoint, {
@@ -71,7 +63,7 @@ export function ChatLayout() {
           });
 
           await handleApiResponse(response, endpoint);
-          
+
           toast({
             title: "Syllabus Uploaded",
             description: "The syllabus has been processed and updated.",
@@ -88,7 +80,7 @@ export function ChatLayout() {
       }
     } catch (error) {
       console.error("Error creating new subject: ", error);
-       toast({
+      toast({
         variant: "destructive",
         title: "Error Creating Subject",
         description: "An error occurred while creating the new subject.",
@@ -116,9 +108,10 @@ export function ChatLayout() {
   const activeChat = useMemo(() => subjects?.find(chat => chat.id === activeChatId), [subjects, activeChatId]);
 
   useEffect(() => {
-    if (activeChat && (activeChat as Chat).messages && (activeChat as Chat).messages.length > 1 && activeChat.subject_name === 'New Subject') {
-      const history = (activeChat as Chat).messages.map(m => `${m.role}: ${m.content}`).join('\n');
-      summarizeChatHistory({ chatHistory: history })
+    const history = activeChat?.conversation_history;
+    if (activeChat && history && history.length > 1 && activeChat.subject_name === 'New Subject') {
+      const historyText = history.map((m: { role: string; content: string }) => `${m.role}: ${m.content}`).join('\n');
+      summarizeChatHistory({ chatHistory: historyText })
         .then(summary => {
           if (user && activeChat.id) {
             const chatDocRef = doc(firestore, `users/${user.uid}/subjects`, activeChat.id);
@@ -134,26 +127,18 @@ export function ChatLayout() {
     // The query is already sorting by createdAt descending
     return subjects;
   }, [subjects]);
-  
-  if (isUserLoading || !user) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
-  }
 
   return (
     <div className="h-full w-full">
       <SidebarProvider>
         <Sidebar collapsible="icon" className="bg-sidebar">
-          <ChatSidebar 
+          <ChatSidebar
             chats={sortedChats}
             activeChatId={activeChatId}
             onNewSubject={addChat}
             onSelectChat={setActiveChatId}
             onDeleteChat={deleteChat}
-            isLoading={areSubjectsLoading || isUserLoading}
+            isLoading={areSubjectsLoading}
           />
         </Sidebar>
         <SidebarInset className="bg-background">

@@ -26,19 +26,19 @@ export function ChatMessages({ messages, isLoading, className }: ChatMessagesPro
 
   return (
     <div className={cn("w-full p-4", className)}>
-        {messages.length === 0 && !isLoading ? (
-            <ChatWelcome />
-        ) : (
-            <div className="flex flex-col gap-4">
-                {messages.map((message, index) => (
-                    <ChatMessage key={index} message={message} />
-                ))}
-                {isLoading && (
-                    <ChatMessage message={{role: 'assistant', message: 'Thinking...'}} isLoading />
-                )}
-            </div>
-        )}
-        <div ref={messagesEndRef} />
+      {messages.length === 0 && !isLoading ? (
+        <ChatWelcome />
+      ) : (
+        <div className="flex flex-col gap-4">
+          {messages.map((message, index) => (
+            <ChatMessage key={index} message={message} />
+          ))}
+          {isLoading && (
+            <ChatMessage message={{ role: 'assistant', content: 'Thinking...' }} isLoading />
+          )}
+        </div>
+      )}
+      <div ref={messagesEndRef} />
     </div>
   )
 }

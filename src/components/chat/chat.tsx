@@ -13,7 +13,7 @@ import { Button } from '../ui/button';
 import SyllabusDisplay from './syllabus-display';
 import QuestionBankDisplay from './question-bank-display';
 import DocumentationDisplay from './documentation-display';
-import { cn, handleApiResponse } from '@/lib/utils';
+import { cn, handleApiResponse, GcrAuthError } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '../ui/card';
 import { Download, Upload, Link as LinkIcon, ExternalLink, PlusCircle, Pencil } from 'lucide-react';
 import {
@@ -57,6 +57,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
 
 
   useEffect(() => {
+    console.log('[ChatComponent] Chat changed:', { id: chat?.id, name: chat?.subject_name, historyCount: chat?.conversation_history?.length });
     if (chat?.conversation_history) {
       setMessages(chat.conversation_history);
     } else {
@@ -66,7 +67,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     setSelectedAssessment(null);
     setIsCreatingAssessment(false);
   }, [chat]);
-  
+
   useEffect(() => {
     const fetchAssessments = async () => {
       if (activeView === 'assessments' && !selectedAssessment && chat?.gcr_course_id) {
@@ -91,7 +92,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     };
     fetchAssessments();
   }, [activeView, chat, selectedAssessment, toast]);
-  
+
   useEffect(() => {
     const fetchStudents = async () => {
       if (chat?.gcr_course_id) {
@@ -100,11 +101,15 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
           const studentData = await getGcrStudents(chat.gcr_course_id);
           setGcrStudents(studentData);
         } catch (error: any) {
-          toast({
-            variant: "destructive",
-            title: "Failed to Fetch Students",
-            description: error.message || "Could not fetch students for this course.",
-          });
+          if (error instanceof GcrAuthError) {
+            await handleGcrAuthRequired('Fetch Students');
+          } else {
+            toast({
+              variant: "destructive",
+              title: "Failed to Fetch Students",
+              description: error.message || "Could not fetch students for this course.",
+            });
+          }
           setGcrStudents([]);
         } finally {
           setAreStudentsLoading(false);
@@ -114,6 +119,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
       }
     };
     fetchStudents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chat?.gcr_course_id, toast]);
 
 
@@ -122,8 +128,8 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
       await triggerGcrAuth();
       setIsGcrAuthDone(true);
       toast({
-        title: "Google Classroom Authenticated",
-        description: "Check your backend console for a URL to visit to complete authentication, then try fetching courses again.",
+        title: "Google Classroom: Check Backend",
+        description: "Visit the URL shown in your backend terminal to complete authentication, then come back and retry.",
       });
     } catch (error: any) {
       toast({
@@ -134,22 +140,45 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     }
   };
 
+  /** Auto-triggers GCR auth when a 401/INVALID_GRANT is detected. */
+  const handleGcrAuthRequired = async (context: string) => {
+    toast({
+      variant: "destructive",
+      title: `${context}: Authentication Required`,
+      description: "Google OAuth token is missing or expired. Initiating re-authentication — check your backend terminal for a URL to visit.",
+    });
+    await handleGcrAuth();
+  };
+
   const handleFetchGcrCourses = async () => {
+    if (isCourseListLoading) return;
     setIsCourseListLoading(true);
     try {
       const courses = await getGcrCourses();
       setGcrCourses(courses);
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Failed to Fetch Courses",
-        description: error.message || "Could not fetch Google Classroom courses.",
-      });
+      if (error instanceof GcrAuthError) {
+        await handleGcrAuthRequired('Fetch Courses');
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Failed to Fetch Courses",
+          description: error.message || "Could not fetch Google Classroom courses.",
+        });
+      }
     } finally {
       setIsCourseListLoading(false);
     }
   };
-  
+
+  // Fetch courses on mount if we have a linked course id but no courses loaded yet
+  useEffect(() => {
+    if (chat?.gcr_course_id && gcrCourses.length === 0 && !isCourseListLoading) {
+      handleFetchGcrCourses();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chat?.gcr_course_id]);
+
   const handleLinkCourse = async (courseId: string) => {
     if (!chat || !user) return;
     const subjectRef = doc(firestore, 'users', user.uid, 'subjects', chat.id);
@@ -161,20 +190,20 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
       description: "This subject is now linked to your Google Classroom course.",
     });
   };
-  
+
   const handleUploadToGcr = async (materialType: 'documentation' | 'question_bank') => {
     if (!chat || !chat.gcr_course_id) {
-       toast({
+      toast({
         variant: "destructive",
         title: "Upload Failed",
         description: "Please link a Google Classroom course to this subject first.",
       });
       return;
     }
-    
+
     const material = chat[materialType];
     if (!material) {
-       toast({
+      toast({
         variant: "destructive",
         title: "Upload Failed",
         description: `No ${materialType.replace('_', ' ')} available to upload.`,
@@ -190,7 +219,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
         description: `The ${materialType.replace('_', ' ')} has been uploaded to Google Classroom.`,
       });
     } catch (error: any) {
-       toast({
+      toast({
         variant: "destructive",
         title: "Upload Failed",
         description: error.message || `Could not upload the ${materialType.replace('_', ' ')}.`,
@@ -202,16 +231,16 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
 
   const handleSend = async (content: string, isGrounded: boolean) => {
     if (!chat || !user) return;
-  
+
     const userMessage: Message = {
       role: 'user',
       content: content,
     };
-  
+
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setIsLoading(true);
-  
+
     try {
       const endpoint = 'http://127.0.0.1:5000/ask';
       const response = await fetch(endpoint, {
@@ -227,12 +256,12 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
           grounded: isGrounded,
         }),
       });
-  
+
       const responseData = await handleApiResponse(response, endpoint);
-      
+
       const assistantMessage: Message = {
-          role: 'assistant',
-          content: responseData.reply,
+        role: 'assistant',
+        content: responseData.reply,
       };
 
       const finalMessages = [...updatedMessages, assistantMessage];
@@ -250,7 +279,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
       setIsLoading(false);
     }
   };
-  
+
   const handleResourceUpload = async (file: File) => {
     if (!chat || !user) {
       toast({
@@ -265,7 +294,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     formData.append('user_id', user.uid);
     formData.append('subject_id', chat.id);
     formData.append('file', file);
-    
+
     toast({
       title: 'Uploading Resource',
       description: `Your file "${file.name}" is being processed...`,
@@ -312,7 +341,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
       });
 
       await handleApiResponse(response, endpoint);
-      
+
       toast({
         title: "Question Bank Generation Started",
         description: "The question bank is being generated and will appear here shortly.",
@@ -329,7 +358,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
       setIsGenerating(false);
     }
   };
-  
+
   const handleDownloadQuestionBank = async () => {
     if (!chat?.question_bank) {
       toast({
@@ -343,23 +372,26 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
     setIsDownloading(true);
     try {
       const endpoint = 'http://127.0.0.1:5000/download_question_bank';
+      // Use raw fetch here — we need to call .blob() on the response body,
+      // so we cannot pass through handleApiResponse which would consume the body as JSON.
       const response = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(chat.question_bank),
       });
 
-      const handledResponse = await handleApiResponse(response, endpoint);
-      
-      const blob = await handledResponse.blob();
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server error ${response.status}: ${errorText}`);
+      }
+
+      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
-      
-      const contentDisposition = handledResponse.headers.get('Content-Disposition');
+
+      const contentDisposition = response.headers.get('Content-Disposition');
       let filename = `${chat.question_bank.course_title.replace(/\s+/g, '_') || 'question_bank'}.pdf`;
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename="(.+)"/);
@@ -371,7 +403,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
 
       document.body.appendChild(a);
       a.click();
-      
+
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
@@ -428,7 +460,7 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
       setIsGeneratingDocs(false);
     }
   };
-  
+
   if (!chat) {
     return <ChatWelcome onNewChat={onNewChat} />;
   }
@@ -442,9 +474,10 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   const navItems = ['Research', 'Documentation', 'Syllabus', 'Question Bank', 'Assessments', 'Students'];
 
   const linkedCourseName = useMemo(() => {
-    if (!chat.gcr_course_id || gcrCourses.length === 0) return null;
-    return gcrCourses.find(c => c.id === chat.gcr_course_id)?.name;
-  }, [chat.gcr_course_id, gcrCourses]);
+    if (!chat.gcr_course_id) return null;
+    if (gcrCourses.length === 0) return isCourseListLoading ? "Loading..." : "Linked Course";
+    return gcrCourses.find(c => c.id === chat.gcr_course_id)?.name || "Linked Course";
+  }, [chat.gcr_course_id, gcrCourses, isCourseListLoading]);
 
   const renderAssessmentsView = () => {
     if (selectedAssessment) {
@@ -508,156 +541,156 @@ export default function ChatComponent({ chat, onNewChat }: ChatProps) {
   return (
     <div className="flex flex-col h-screen">
       <div className="flex items-center justify-between w-full h-14 px-4 border-b shrink-0">
-          <div className="flex items-center gap-2">
-            <SidebarTrigger className="md:hidden"/>
-            <div className="flex items-center gap-4">
-              {navItems.map((item) => (
-                <Button
-                  key={item}
-                  variant="ghost"
-                  onClick={() => handleTabClick(item.toLowerCase().replace(' ', '-'))}
-                  className={cn(
-                    "text-sm font-medium text-muted-foreground hover:text-foreground",
-                    activeView === item.toLowerCase().replace(' ', '-') && "text-foreground"
-                  )}
-                >
-                  {item}
-                </Button>
-              ))}
-            </div>
-          </div>
+        <div className="flex items-center gap-2">
+          <SidebarTrigger className="md:hidden" />
           <div className="flex items-center gap-4">
-            {linkedCourseName ? (
-              <span className="text-sm text-muted-foreground">Linked to: <strong>{linkedCourseName}</strong></span>
-            ) : (
-              <DropdownMenu onOpenChange={(open) => open && gcrCourses.length === 0 && handleFetchGcrCourses()}>
-                <DropdownMenuTrigger asChild>
-                   <Button variant="outline" size="sm">
-                    <LinkIcon className="mr-2 h-4 w-4" />
-                    Link Course
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  {isCourseListLoading ? (
-                    <DropdownMenuItem disabled>Loading courses...</DropdownMenuItem>
-                  ) : gcrCourses.length > 0 ? (
-                    gcrCourses.map(course => (
-                      <DropdownMenuItem key={course.id} onClick={() => handleLinkCourse(course.id)}>
-                        {course.name}
-                      </DropdownMenuItem>
-                    ))
-                  ) : (
-                     <DropdownMenuItem onClick={handleGcrAuth}>Connect to Classroom</DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+            {navItems.map((item) => (
+              <Button
+                key={item}
+                variant="ghost"
+                onClick={() => handleTabClick(item.toLowerCase().replace(' ', '-'))}
+                className={cn(
+                  "text-sm font-medium text-muted-foreground hover:text-foreground",
+                  activeView === item.toLowerCase().replace(' ', '-') && "text-foreground"
+                )}
+              >
+                {item}
+              </Button>
+            ))}
           </div>
+        </div>
+        <div className="flex items-center gap-4">
+          {linkedCourseName ? (
+            <span className="text-sm text-muted-foreground">Linked to: <strong>{linkedCourseName}</strong></span>
+          ) : (
+            <DropdownMenu onOpenChange={(open) => open && gcrCourses.length === 0 && handleFetchGcrCourses()}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <LinkIcon className="mr-2 h-4 w-4" />
+                  Link Course
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {isCourseListLoading ? (
+                  <DropdownMenuItem disabled>Loading courses...</DropdownMenuItem>
+                ) : gcrCourses.length > 0 ? (
+                  gcrCourses.map(course => (
+                    <DropdownMenuItem key={course.id} onClick={() => handleLinkCourse(course.id)}>
+                      {course.name}
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <DropdownMenuItem onClick={handleGcrAuth}>Connect to Classroom</DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto">
         <div className="w-full h-full max-w-4xl mx-auto">
-            {activeView === 'research' && (
-                <div className="flex flex-col h-full">
-                    <ChatMessages messages={messages} isLoading={isLoading} className="flex-1"/>
-                    <div className="pb-4">
-                        <ChatInput
-                          onSend={handleSend}
-                          onResourceUpload={handleResourceUpload}
-                          isLoading={isLoading}
-                        />
-                    </div>
-                </div>
-            )}
-
-            {activeView === 'documentation' && (
-                <div className="p-4">
-                    {chat.documentation ? (
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                <CardTitle>{chat.documentation.course_title}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <DocumentationDisplay documentation={chat.documentation} />
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center h-full pt-20 text-center">
-                            <p className="text-muted-foreground mb-4">No documentation available for this subject.</p>
-                             <Button onClick={handleGenerateDocumentation} disabled={isGeneratingDocs}>
-                                {isGeneratingDocs ? 'Generating...' : 'Generate Documentation'}
-                            </Button>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {activeView === 'syllabus' && (
-                <div className="p-4">
-                {chat.syllabus ? (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>{chat.syllabus.course_title}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <SyllabusDisplay syllabus={chat.syllabus} />
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <div className="flex items-center justify-center h-full pt-20">
-                        <p className="text-muted-foreground">No syllabus available for this subject.</p>
-                    </div>
-                )}
-                </div>
-            )}
-            
-            {activeView === 'question-bank' && (
-                <div className="p-4">
-                {chat.question_bank ? (
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle>{chat.question_bank.course_title}</CardTitle>
-                             <div className="flex items-center gap-2">
-                                <Button variant="outline" size="sm" onClick={handleDownloadQuestionBank} disabled={isDownloading}>
-                                    <Download className="mr-2 h-4 w-4" />
-                                    {isDownloading ? 'Downloading...' : 'Download'}
-                                </Button>
-                                <Button variant="outline" size="sm" onClick={() => handleUploadToGcr('question_bank')} disabled={isUploading || !chat.gcr_course_id}>
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    {isUploading ? 'Uploading...' : 'Upload to GCR'}
-                                </Button>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <QuestionBankDisplay questionBank={chat.question_bank} />
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <div className="flex flex-col items-center justify-center h-full pt-20 text-center">
-                        <p className="text-muted-foreground mb-4">No question bank available for this subject.</p>
-                        <Button onClick={handleGenerateQuestionBank} disabled={isGenerating}>
-                            {isGenerating ? 'Generating...' : 'Generate Question Bank'}
-                        </Button>
-                    </div>
-                )}
-                </div>
-            )}
-            
-            {activeView === 'assessments' && (
-              <div className="p-4">
-                {renderAssessmentsView()}
-              </div>
-            )}
-
-            {activeView === 'students' && (
-              <div className="p-4">
-                <StudentsDisplay 
-                  gcrCourseId={chat.gcr_course_id} 
-                  students={gcrStudents}
-                  isLoading={areStudentsLoading}
-                  onAuth={handleGcrAuth}
+          {activeView === 'research' && (
+            <div className="flex flex-col h-full">
+              <ChatMessages messages={messages} isLoading={isLoading} className="flex-1" />
+              <div className="pb-4">
+                <ChatInput
+                  onSend={handleSend}
+                  onResourceUpload={handleResourceUpload}
+                  isLoading={isLoading}
                 />
               </div>
-            )}
+            </div>
+          )}
+
+          {activeView === 'documentation' && (
+            <div className="p-4">
+              {chat.documentation ? (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>{chat.documentation.course_title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <DocumentationDisplay documentation={chat.documentation} />
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full pt-20 text-center">
+                  <p className="text-muted-foreground mb-4">No documentation available for this subject.</p>
+                  <Button onClick={handleGenerateDocumentation} disabled={isGeneratingDocs}>
+                    {isGeneratingDocs ? 'Generating...' : 'Generate Documentation'}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeView === 'syllabus' && (
+            <div className="p-4">
+              {chat.syllabus ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{chat.syllabus.course_title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <SyllabusDisplay syllabus={chat.syllabus} />
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="flex items-center justify-center h-full pt-20">
+                  <p className="text-muted-foreground">No syllabus available for this subject.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeView === 'question-bank' && (
+            <div className="p-4">
+              {chat.question_bank ? (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>{chat.question_bank.course_title}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={handleDownloadQuestionBank} disabled={isDownloading}>
+                        <Download className="mr-2 h-4 w-4" />
+                        {isDownloading ? 'Downloading...' : 'Download'}
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleUploadToGcr('question_bank')} disabled={isUploading || !chat.gcr_course_id}>
+                        <Upload className="mr-2 h-4 w-4" />
+                        {isUploading ? 'Uploading...' : 'Upload to GCR'}
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <QuestionBankDisplay questionBank={chat.question_bank} />
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full pt-20 text-center">
+                  <p className="text-muted-foreground mb-4">No question bank available for this subject.</p>
+                  <Button onClick={handleGenerateQuestionBank} disabled={isGenerating}>
+                    {isGenerating ? 'Generating...' : 'Generate Question Bank'}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeView === 'assessments' && (
+            <div className="p-4">
+              {renderAssessmentsView()}
+            </div>
+          )}
+
+          {activeView === 'students' && (
+            <div className="p-4">
+              <StudentsDisplay
+                gcrCourseId={chat.gcr_course_id}
+                students={gcrStudents}
+                isLoading={areStudentsLoading}
+                onAuth={handleGcrAuth}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

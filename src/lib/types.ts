@@ -3,6 +3,7 @@ import type { Timestamp } from 'firebase/firestore';
 export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  message?: string; // Fallback for old data
 }
 
 export interface Syllabus {
@@ -66,12 +67,24 @@ export interface Assessment {
     };
   };
   created_at?: Timestamp;
+  grades?: {
+    computed_at: any;
+    count: number;
+    by_email: {
+      [email: string]: {
+        score: number;
+        max: number;
+        responseId: string;
+        lastSubmittedTime: string;
+      };
+    };
+  };
 }
 
 export type LatestQuiz = Assessment;
 
 export interface Subject {
-  id:string;
+  id: string;
   subject_name: string;
   createdAt?: Timestamp;
   conversation_history?: Message[];
@@ -83,13 +96,13 @@ export interface Subject {
   latest_quiz?: LatestQuiz;
 }
 
-export interface Chat extends Subject {}
+export interface Chat extends Subject { }
 
 export interface UserProfile {
-    id: string;
-    email: string;
-    displayName?: string;
-    photoURL?: string;
+  id: string;
+  email: string;
+  displayName?: string;
+  photoURL?: string;
 }
 
 export interface GcrCourse {
@@ -147,4 +160,8 @@ export interface GradeRefreshResult {
   skipped_count: number;
   updated: StudentSubmission[];
   skipped: any[];
+  grades: {
+    count: number;
+    by_email: any;
+  };
 }

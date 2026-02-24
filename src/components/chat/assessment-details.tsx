@@ -26,23 +26,47 @@ export default function AssessmentDetails({ assessment, user, chat, students, on
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
+  useEffect(() => {
+    console.log('[AssessmentDetails] Mount/Update. Assessment:', assessment.id, 'Existing grades count:', assessment.grades?.count);
+    if (assessment.grades?.by_email) {
+      const initialSubmissions: StudentSubmission[] = Object.entries(assessment.grades.by_email).map(([email, info]) => ({
+        userId: email,
+        email: email,
+        assignedGrade: info.score,
+        submissionId: '',
+        status: 'form_only'
+      }));
+      console.log('[AssessmentDetails] Setting initial submissions:', initialSubmissions.length);
+      setSubmissions(initialSubmissions);
+    }
+  }, [assessment]);
+
   const handleRefreshGrades = async () => {
     if (!user || !chat) {
-        toast({
-            variant: 'destructive',
-            title: 'Refresh Failed',
-            description: 'User or chat data is missing.',
-        });
-        return;
+      toast({
+        variant: 'destructive',
+        title: 'Refresh Failed',
+        description: 'User or chat data is missing.',
+      });
+      return;
     }
     setIsRefreshing(true);
     try {
+      console.log('[AssessmentDetails] Refreshing grades for:', assessment.form_id);
       const result = await refreshGcrGrades(assessment, user.uid, chat.id);
+      console.log('[AssessmentDetails] Refresh result:', result);
       setSubmissions(result.updated);
-      toast({
-        title: 'Grades Refreshed',
-        description: `${result.updated_count} submissions were updated.`,
-      });
+      if (result.updated_count === 0 && result.grades.count > 0) {
+        toast({
+          title: 'Grades Fetched',
+          description: `Found ${result.grades.count} responses in the Form, but none could be pushed to Google Classroom.`,
+        });
+      } else {
+        toast({
+          title: 'Grades Refreshed',
+          description: `${result.updated_count} submissions were updated in Google Classroom.`,
+        });
+      }
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -54,8 +78,13 @@ export default function AssessmentDetails({ assessment, user, chat, students, on
     }
   };
 
-  const getStudentName = (userId: string) => {
-    return students.find(s => s.userId === userId)?.profile.name.fullName || userId;
+  const getStudentName = (submission: StudentSubmission) => {
+    const student = students.find(s =>
+      s.userId === submission.userId ||
+      s.profile.emailAddress === submission.userId ||
+      s.profile.emailAddress === (submission as any).email
+    );
+    return student?.profile.name.fullName || (submission as any).email || submission.userId;
   };
 
   const numQuestions = Object.keys(assessment.answer_key || {}).length;
@@ -68,16 +97,16 @@ export default function AssessmentDetails({ assessment, user, chat, students, on
           Back to Assessments
         </Button>
         <div className="flex items-center gap-2">
-            <a href={assessment.responder_uri} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline">
-                <ExternalLink className="mr-2 h-4 w-4" />
-                View Form
-              </Button>
-            </a>
-            <Button onClick={handleRefreshGrades} disabled={isRefreshing}>
-                <RefreshCw className={cn('mr-2 h-4 w-4', isRefreshing && 'animate-spin')} />
-                {isRefreshing ? 'Refreshing...' : 'Refresh Grades'}
+          <a href={assessment.responder_uri} target="_blank" rel="noopener noreferrer">
+            <Button variant="outline">
+              <ExternalLink className="mr-2 h-4 w-4" />
+              View Form
             </Button>
+          </a>
+          <Button onClick={handleRefreshGrades} disabled={isRefreshing}>
+            <RefreshCw className={cn('mr-2 h-4 w-4', isRefreshing && 'animate-spin')} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh Grades'}
+          </Button>
         </div>
       </div>
 
@@ -93,26 +122,26 @@ export default function AssessmentDetails({ assessment, user, chat, students, on
             <p className="text-sm text-muted-foreground">Max Points: {assessment.max_points || 'N/A'}</p>
           </div>
           <div>
-             <h4 className="font-semibold text-sm mb-2">Answer Key</h4>
-             <Accordion type="single" collapsible className="w-full">
-                {assessment.answer_key && Object.entries(assessment.answer_key).map(([qid, ans], index) => (
-                    <AccordionItem value={`item-${index}`} key={qid}>
-                        <AccordionTrigger>Question {index + 1}</AccordionTrigger>
-                        <AccordionContent>
-                           <p><strong>Correct Answer:</strong> {ans.correct}</p>
-                           <p><strong>Points:</strong> {ans.points}</p>
-                        </AccordionContent>
-                    </AccordionItem>
-                ))}
+            <h4 className="font-semibold text-sm mb-2">Answer Key</h4>
+            <Accordion type="single" collapsible className="w-full">
+              {assessment.answer_key && Object.entries(assessment.answer_key).map(([qid, ans], index) => (
+                <AccordionItem value={`item-${index}`} key={qid}>
+                  <AccordionTrigger>Question {index + 1}</AccordionTrigger>
+                  <AccordionContent>
+                    <p><strong>Correct Answer:</strong> {ans.correct}</p>
+                    <p><strong>Points:</strong> {ans.points}</p>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
             </Accordion>
           </div>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Student Submissions</CardTitle>
-          <CardDescription>Latest scores from Google Classroom.</CardDescription>
+          <CardDescription>Latest scores from Google Classroom. Total in list: {submissions.length}</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -123,16 +152,16 @@ export default function AssessmentDetails({ assessment, user, chat, students, on
               </TableRow>
             </TableHeader>
             <TableBody>
-              {submissions.length > 0 ? submissions.map(sub => (
-                <TableRow key={sub.userId}>
-                  <TableCell className="font-medium">{getStudentName(sub.userId)}</TableCell>
+              {submissions.length > 0 ? submissions.map((sub, idx) => (
+                <TableRow key={sub.submissionId || sub.userId || idx}>
+                  <TableCell className="font-medium">{getStudentName(sub)}</TableCell>
                   <TableCell className="text-right">{sub.assignedGrade ?? 'Not graded'}</TableCell>
                 </TableRow>
               )) : (
                 <TableRow>
-                    <TableCell colSpan={2} className="text-center text-muted-foreground">
-                        No submissions found. Click "Refresh Grades" to fetch the latest data.
-                    </TableCell>
+                  <TableCell colSpan={2} className="text-center text-muted-foreground">
+                    No submissions found. Click "Refresh Grades" to fetch the latest data.
+                  </TableCell>
                 </TableRow>
               )}
             </TableBody>
