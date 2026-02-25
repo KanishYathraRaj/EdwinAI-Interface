@@ -3,7 +3,7 @@
 import { GcrCourse, GcrStudent, GcrCourseWork, GradeRefreshResult, Assessment } from "./types";
 import { handleApiResponse } from "./utils";
 
-const API_BASE_URL = 'http://127.0.0.1:5000';
+const API_BASE_URL = 'http://127.0.0.1:5005';
 
 
 export async function triggerGcrAuth(): Promise<any> {
@@ -99,6 +99,17 @@ export async function refreshGcrGrades(assessment: Assessment, userId: string, s
     const response = await fetch(endpoint, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
+    });
+
+    return handleApiResponse(response, endpoint);
+}
+
+export async function publishToGcr(courseId: string, title: string, content: string): Promise<any> {
+    const endpoint = `${API_BASE_URL}/gcr/courses/${courseId}/publish`;
+    const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content }),
     });
 
     return handleApiResponse(response, endpoint);

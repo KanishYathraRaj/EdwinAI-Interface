@@ -6,12 +6,17 @@ export interface Message {
   message?: string; // Fallback for old data
 }
 
+export interface SyllabusTopic {
+  title: string;
+  subtopics: string[];
+}
+
 export interface Syllabus {
   course_title: string;
   units: {
     unit_number: string;
     unit_title: string;
-    topics: string[];
+    topics: SyllabusTopic[];
   }[];
 }
 
@@ -24,7 +29,29 @@ export interface QuestionUnit {
 
 export interface QuestionBank {
   course_title: string;
-  units: QuestionUnit[];
+  questions: {
+    '2_marks': string[];
+    '16_marks': string[];
+  };
+  answer_key?: {
+    '2_marks': { answer: string; references: string }[];
+    '16_marks': { answer: string; references: string }[];
+  };
+  published_to_gcr?: boolean;
+  answer_key_published_to_gcr?: boolean;
+}
+
+export interface QuestionBankHistory {
+  id: string;
+  name: string;
+  description?: string;
+  difficulty: string;
+  selected_topics: string[];
+  content: QuestionBank;
+  created_at: any;
+  subjectId?: string;
+  published_to_gcr?: boolean;
+  answer_key_published_to_gcr?: boolean;
 }
 
 export interface DocumentationTopic {
@@ -33,6 +60,7 @@ export interface DocumentationTopic {
   explanation: string;
   examples: string[];
   real_world_applications: string[];
+  pitfalls?: string[];
 }
 
 export interface DocumentationUnit {
@@ -47,6 +75,7 @@ export interface Documentation {
   overview: string;
   final_summary: string;
   units: DocumentationUnit[];
+  published_to_gcr?: boolean;
 }
 
 export interface Assessment {
@@ -79,6 +108,8 @@ export interface Assessment {
       };
     };
   };
+  subjectId?: string;
+  published_to_gcr?: boolean;
 }
 
 export type LatestQuiz = Assessment;
@@ -86,12 +117,15 @@ export type LatestQuiz = Assessment;
 export interface Subject {
   id: string;
   subject_name: string;
+  slug?: string;
   createdAt?: Timestamp;
   conversation_history?: Message[];
   syllabus?: Syllabus;
   question_bank?: QuestionBank;
+  latest_question_bank?: QuestionBankHistory;
   documentation?: Documentation;
   resources?: string[];
+  completed_subtopics?: string[]; // Array of "Unit|Topic|Subtopic" strings
   gcr_course_id?: string;
   latest_quiz?: LatestQuiz;
 }

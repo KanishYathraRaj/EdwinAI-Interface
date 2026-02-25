@@ -28,7 +28,7 @@ export function ChatInput({ onSend, onResourceUpload, isLoading }: ChatInputProp
       textareaRef.current.style.height = 'auto';
     }
   };
-  
+
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -78,7 +78,7 @@ export function ChatInput({ onSend, onResourceUpload, isLoading }: ChatInputProp
         <Button
           onClick={handleSend}
           size="icon"
-          className="shrink-0 absolute right-2 top-1/2 -translate-y-1/2 size-8 rounded-lg bg-white hover:bg-white/90 text-black disabled:bg-white"
+          className="shrink-0 absolute right-2 top-1/2 -translate-y-1/2 size-8 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-200"
           disabled={isLoading || !content?.trim()}
           aria-label="Send message"
         >
@@ -88,23 +88,23 @@ export function ChatInput({ onSend, onResourceUpload, isLoading }: ChatInputProp
       <div className="flex items-center justify-between mt-2">
         <p className="text-center text-xs text-muted-foreground/50">EdwinAI can make mistakes. Consider checking important information.</p>
         <div className="flex items-center space-x-4">
-            <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-                accept=".pdf"
-            />
-            <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
-                <Upload className="mr-2 h-4 w-4" />
-                Resource
-            </Button>
-            <div className="flex items-center space-x-2">
-                <Switch id="grounded-mode" checked={isGrounded} onCheckedChange={setIsGrounded} />
-                <Label htmlFor="grounded-mode" className={cn("text-xs", isGrounded ? "text-muted-foreground" : "text-foreground")}>
-                    {isGrounded ? 'Grounded' : 'Explore'}
-                </Label>
-            </div>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
+            accept=".pdf"
+          />
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
+            <Upload className="mr-2 h-4 w-4" />
+            Resource
+          </Button>
+          <div className="flex items-center space-x-2">
+            <Switch id="grounded-mode" checked={isGrounded} onCheckedChange={setIsGrounded} />
+            <Label htmlFor="grounded-mode" className={cn("text-xs", isGrounded ? "text-muted-foreground" : "text-foreground")}>
+              {isGrounded ? 'Grounded' : 'Explore'}
+            </Label>
+          </div>
         </div>
       </div>
     </div>
