@@ -1,0 +1,268 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "type": "object",
+      "description": "Represents a user's profile information.",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        }
+      },
+      "required": [
+        "email"
+      ]
+    },
+    "Subject": {
+      "title": "Subject",
+      "type": "object",
+      "description": "Represents a single subject session, containing messages and metadata.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the subject session."
+        },
+        "subject_name": {
+          "type": "string",
+          "description": "The name or title of the subject."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the subject session was created.",
+          "format": "date-time"
+        },
+        "conversation_history": {
+          "type": "array",
+          "description": "A history of the conversation.",
+          "items": {
+            "$ref": "#/entities/Message"
+          }
+        },
+        "syllabus": {
+          "$ref": "#/entities/Syllabus"
+        },
+        "question_bank": {
+          "$ref": "#/entities/QuestionBank"
+        },
+        "documentation": {
+          "$ref": "#/entities/Documentation"
+        },
+        "resources": {
+          "type": "array",
+          "description": "A list of resources for the subject.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "subject_name"
+      ]
+    },
+    "Message": {
+      "title": "Message",
+      "type": "object",
+      "description": "Represents a single message within a conversation history.",
+      "properties": {
+        "role": {
+          "type": "string",
+          "description": "Indicates who sent the message.",
+          "enum": ["user", "assistant", "system"]
+        },
+        "content": {
+          "type": "string",
+          "description": "The text content of the message."
+        }
+      },
+      "required": [
+        "role",
+        "content"
+      ]
+    },
+    "Syllabus": {
+      "title": "Syllabus",
+      "type": "object",
+      "description": "A JSON object representing the syllabus for the subject.",
+      "properties": {
+        "course_title": {
+          "type": "string"
+        },
+        "units": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "unit_number": {
+                "type": "string"
+              },
+              "unit_title": {
+                "type": "string"
+              },
+              "topics": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": ["unit_number", "unit_title", "topics"]
+          }
+        }
+      },
+      "required": ["course_title", "units"]
+    },
+    "QuestionBank": {
+      "title": "Question Bank",
+      "type": "object",
+      "description": "A JSON object representing a question bank for the subject.",
+      "properties": {
+        "course_title": {
+          "type": "string"
+        },
+        "units": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "unit_number": {
+                "type": "string"
+              },
+              "unit_title": {
+                "type": "string"
+              },
+              "2_marks": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "16_marks": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": ["unit_number", "unit_title", "2_marks", "16_marks"]
+          }
+        }
+      },
+      "required": ["course_title", "units"]
+    },
+    "Documentation": {
+      "title": "Documentation",
+      "type": "object",
+      "description": "A comprehensive documentation object for the subject.",
+      "properties": {
+        "course_title": {
+          "type": "string"
+        },
+        "overview": {
+          "type": "string"
+        },
+        "final_summary": {
+          "type": "string"
+        },
+        "units": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "unit_number": {
+                "type": "string"
+              },
+              "unit_title": {
+                "type": "string"
+              },
+              "unit_summary": {
+                "type": "string"
+              },
+              "topics": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "topic_title": {
+                      "type": "string"
+                    },
+                    "summary": {
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "type": "string"
+                    },
+                    "examples": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "real_world_applications": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": ["topic_title", "summary", "explanation", "examples", "real_world_applications"]
+                }
+              }
+            },
+            "required": ["unit_number", "unit_title", "unit_summary", "topics"]
+          }
+        }
+      },
+      "required": ["course_title", "overview", "final_summary", "units"]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profile information.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/subjects/{subjectId}",
+        "definition": {
+          "entityName": "Subject",
+          "schema": {
+            "$ref": "#/backend/entities/Subject"
+          },
+          "description": "Stores subject sessions specific to a user. Path-based ownership ensures users can only access their own subject sessions.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "subjectId",
+              "description": "The unique identifier for the subject session."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to support the Edwin app's chat functionality, focusing on user-specific subject sessions and messages. The primary structure is based on nested collections to maintain a clear ownership and relationship between users, subject sessions, and messages. Each user has their own collection of subject sessions, and each subject session contains its own collection of messages. This approach facilitates secure and efficient data retrieval and management. The use of path-based ownership `/users/{userId}/subjects/{subjectId}/messages/{messageId}` ensures that each user can only access their own data. Authorization Independence is achieved as there is no need to retrieve parent data to validate access; security rules can directly verify the `request.auth.uid` against the `{userId}` parameter in the path. QAPs are satisfied because list operations are naturally scoped to a user's subject sessions and messages, preventing unauthorized access to other users' data. Homogeneous Security Posture is achieved by ensuring all documents within a collection share the same security requirements, simplifying rules and preventing unintended access."
+  }
+}

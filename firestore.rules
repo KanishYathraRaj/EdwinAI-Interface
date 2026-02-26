@@ -1,0 +1,88 @@
+/**
+ * @file Firestore Security Rules for Edwin Chat App
+ * @description This ruleset enforces a strict user-ownership model for subjects and messages, ensuring that users can only access their own data.
+ * @dataStructure All data is nested under /users/{userId}, creating a clear hierarchy of users, subjects, and messages.
+ * @keySecurityDecisions
+ *   - Users can only access their own subjects and messages.
+ *   - Listing other users' subjects is disallowed.
+ *   - Data schema is not strictly enforced during this prototyping phase.
+ * @denormalization No denormalization needed. The path-based ownership provides authorization independence.
+ * @structuralSegregation Private data is stored under each user's path. There is no public data.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Enforces user-ownership for user profile documents.
+     * @path /users/{userId}
+     * @allow (get, update) User can read or update their own profile.
+     * @deny (list, create, delete) Users cannot list, create, or delete other user profiles directly.
+     */
+    match /users/{userId} {
+      function isOwner() {
+        return request.auth.uid == userId;
+      }
+
+      allow get: if isOwner();
+      allow update: if isOwner();
+      allow create: if isOwner();
+      allow delete: if false; // Generally, don't let users delete their own profile doc
+      allow list: if false; // Don't allow listing of all users
+    }
+
+    /**
+     * @description Enforces user-ownership for subjects.
+     * @path /users/{userId}/subjects/{subjectId}
+     * @allow (create) User 'user123' can create a new subject under their user ID.
+     * @allow (get) User 'user123' can read their own subject.
+     * @allow (update) User 'user123' can update their own subject.
+     * @allow (delete) User 'user123' can delete their own subject.
+     * @deny (create) User 'user456' cannot create a subject under 'user123'.
+     * @deny (get) User 'user456' cannot read 'user123' subject.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId}/subjects/{subjectId} {
+      function isOwner() {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner() {
+        return request.auth.uid == userId && resource != null;
+      }
+
+      allow get: if isOwner();
+      allow list: if isOwner();
+      allow create: if isOwner();
+      allow update: if isExistingOwner();
+      allow delete: if isExistingOwner();
+    }
+
+    /**
+     * @description Enforces user-ownership for messages within subjects.
+     * @path /users/{userId}/subjects/{subjectId}/messages/{messageId}
+     * @allow (create) User 'user123' can create a new message in their subject.
+     * @allow (get) User 'user123' can read a message in their subject.
+     * @allow (update) User 'user123' can update a message in their subject.
+     * @allow (delete) User 'user123' can delete a message in their subject.
+     * @deny (create) User 'user456' cannot create a message in 'user123' subject.
+     * @deny (get) User 'user456' cannot read a message in 'user123' subject.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId}/subjects/{subjectId}/messages/{messageId} {
+      function isOwner() {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner() {
+        return request.auth.uid == userId && resource != null;
+      }
+
+      allow get: if isOwner();
+      allow list: if isOwner();
+      allow create: if isOwner();
+      allow update: if isExistingOwner();
+      allow delete: if isExistingOwner();
+    }
+  }
+}
