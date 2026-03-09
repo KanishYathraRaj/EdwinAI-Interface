@@ -10,9 +10,11 @@ export function cn(...inputs: ClassValue[]) {
  * Callers should catch this and trigger the GCR re-auth flow.
  */
 export class GcrAuthError extends Error {
-  constructor(message: string) {
+  authUrl?: string;
+  constructor(message: string, authUrl?: string) {
     super(message);
     this.name = 'GcrAuthError';
+    this.authUrl = authUrl;
   }
 }
 
@@ -21,7 +23,7 @@ export async function handleApiResponse(response: Response, endpoint: string) {
 
   if (!response.ok) {
     const errorText = await response.text();
-    let errorData: { error?: string; code?: string; hint?: string };
+    let errorData: { error?: string; code?: string; hint?: string; auth_url?: string };
     try {
       errorData = JSON.parse(errorText);
     } catch (e) {
@@ -35,7 +37,8 @@ export async function handleApiResponse(response: Response, endpoint: string) {
       throw new GcrAuthError(
         errorData.hint ||
         errorData.error ||
-        'Google OAuth token is missing or expired. Please re-authenticate.'
+        'Google OAuth token is missing or expired. Please re-authenticate.',
+        errorData.auth_url
       );
     }
 

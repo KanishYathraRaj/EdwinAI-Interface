@@ -202,6 +202,196 @@
   scrollbar-color: hsl(var(--border)) transparent;
 }
 
+.edwin-timegrid {
+  height: 100%;
+  --fc-border-color: hsl(var(--border) / 0.75);
+  --fc-page-bg-color: hsl(var(--background));
+  --fc-neutral-bg-color: hsl(var(--background));
+  --fc-today-bg-color: hsl(var(--accent) / 0.18);
+  --fc-now-indicator-color: hsl(var(--primary));
+}
+
+.edwin-timegrid .fc {
+  height: 100%;
+  color: hsl(var(--foreground));
+  font-family: inherit;
+}
+
+.edwin-timegrid .fc-theme-standard td,
+.edwin-timegrid .fc-theme-standard th,
+.edwin-timegrid .fc-theme-standard .fc-scrollgrid {
+  border-color: hsl(var(--border) / 0.45);
+}
+
+.edwin-timegrid .fc-media-screen {
+  height: 100%;
+}
+
+.edwin-timegrid .fc-scrollgrid,
+.edwin-timegrid .fc-scrollgrid-section,
+.edwin-timegrid .fc-scrollgrid-section > td,
+.edwin-timegrid .fc-scroller,
+.edwin-timegrid .fc-timegrid-slot,
+.edwin-timegrid .fc-timegrid-axis,
+.edwin-timegrid .fc-timegrid-col,
+.edwin-timegrid .fc-col-header-cell {
+  background: transparent;
+}
+
+.edwin-timegrid .fc-scrollgrid {
+  border-left-width: 0;
+  border-right-width: 0;
+  border-top-width: 0;
+}
+
+.edwin-timegrid .fc-scrollgrid-section-header > *,
+.edwin-timegrid .fc-scrollgrid-section-body > * {
+  border-left-width: 0;
+  border-right-width: 0;
+}
+
+.edwin-timegrid .fc-col-header-cell {
+  height: 4rem;
+  padding: 0;
+  vertical-align: middle;
+}
+
+.edwin-timegrid .fc-timegrid-axis {
+  width: 5rem;
+}
+
+.edwin-timegrid .fc-timegrid-axis-cushion,
+.edwin-timegrid .fc-col-header-cell-cushion {
+  padding: 0;
+}
+
+.edwin-timegrid .fc-timegrid-slot {
+  height: 5rem;
+}
+
+.edwin-timegrid .fc-timegrid-slot-label {
+  padding-right: 1rem;
+}
+
+.edwin-timegrid .fc-timegrid-slot-label-cushion {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.edwin-timegrid .fc-timegrid-now-indicator-line {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 12px hsl(var(--primary) / 0.4);
+}
+
+.edwin-timegrid .fc-timegrid-now-indicator-arrow {
+  border-top-color: hsl(var(--primary));
+  border-bottom-color: hsl(var(--primary));
+}
+
+.edwin-timegrid .fc-event {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.edwin-timegrid .fc-timegrid-event-harness {
+  margin: 0 0.45rem 0 0.1rem;
+}
+
+.edwin-timegrid .fc-timegrid-event-harness-inset {
+  inset-inline: 0.1rem 0.45rem;
+}
+
+.edwin-event-card {
+  position: relative;
+  display: flex;
+  min-height: 100%;
+  overflow: hidden;
+  border-radius: 0 0.95rem 0.95rem 0;
+  background: hsl(var(--card) / 0.78);
+  backdrop-filter: blur(10px);
+  box-shadow: inset 0 0 0 1px hsl(var(--border) / 0.22);
+}
+
+.edwin-day-header {
+  height: 4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.18rem;
+}
+
+.edwin-day-label {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.edwin-day-number {
+  color: hsl(var(--foreground));
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.edwin-event-strip {
+  width: 3px;
+  flex: 0 0 3px;
+}
+
+.edwin-event-body {
+  flex: 1;
+  padding: 0.6rem 0.7rem 0.65rem;
+  min-width: 0;
+}
+
+.edwin-event-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.18rem;
+}
+
+.edwin-event-batch {
+  color: hsl(var(--foreground));
+  font-weight: 700;
+  font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edwin-event-time {
+  font-size: 0.72rem;
+  font-weight: 700;
+  opacity: 0.9;
+  white-space: nowrap;
+}
+
+.edwin-event-title {
+  color: hsl(var(--foreground) / 0.92);
+  font-size: 0.74rem;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.edwin-event-unit {
+  margin-top: 0.25rem;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.7rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .prose h1,
 .prose h2,
 .prose h3,

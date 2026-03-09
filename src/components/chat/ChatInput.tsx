@@ -1,59 +1,112 @@
-import { useState } from 'react';
-import { Send } from 'lucide-react';
+'use client';
+
+import { useRef, useEffect, type KeyboardEvent, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { ArrowUp, Upload } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 interface ChatInputProps {
-  onSendMessage: (message: string) => void;
-  disabled?: boolean;
-  placeholder?: string;
+  onSend: (content: string, isGrounded: boolean) => void;
+  onResourceUpload: (file: File) => void;
+  isLoading: boolean;
 }
 
-export function ChatInput({ onSendMessage, disabled, placeholder }: ChatInputProps) {
-  const [message, setMessage] = useState('');
+export function ChatInput({ onSend, onResourceUpload, isLoading }: ChatInputProps) {
+  const [content, setContent] = useState('');
+  const [isGrounded, setIsGrounded] = useState(true);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (message.trim() && !disabled) {
-      onSendMessage(message.trim());
-      setMessage('');
+  const handleSend = () => {
+    if (!content || !content.trim() || isLoading) return;
+    onSend(content.trim(), isGrounded);
+    setContent('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      const scrollHeight = textareaRef.current.scrollHeight;
+      const maxHeight = parseInt(getComputedStyle(textareaRef.current).maxHeight, 10);
+      if (scrollHeight > maxHeight) {
+        textareaRef.current.style.height = `${maxHeight}px`;
+        textareaRef.current.style.overflowY = 'auto';
+      } else {
+        textareaRef.current.style.height = `${scrollHeight}px`;
+        textareaRef.current.style.overflowY = 'hidden';
+      }
+    }
+  }, [content]);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      onResourceUpload(file);
+    }
+    // Reset file input to allow uploading the same file again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="border-t border-zinc-800 bg-zinc-900 p-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex gap-3 items-end">
-          <div className="flex-1 relative">
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit(e);
-                }
-              }}
-              placeholder={placeholder || 'Message EdwinAI...'}
-              disabled={disabled}
-              rows={1}
-              className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-500 resize-none min-h-[48px] max-h-[200px]"
-              style={{
-                height: 'auto',
-                overflowY: message.split('\n').length > 3 ? 'auto' : 'hidden',
-              }}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={disabled || !message.trim()}
-            className="p-3 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-          >
-            <Send className="w-5 h-5" />
-          </button>
-        </div>
-        <p className="text-xs text-gray-500 text-center mt-2">
-          EdwinAI can make mistakes. Consider checking important information.
-        </p>
+    <div className="p-4 bg-transparent">
+      <div className="relative">
+        <Textarea
+          ref={textareaRef}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Message EdwinAI..."
+          className="resize-none pr-12 py-3 max-h-48 rounded-2xl border-sidebar-border focus-visible:ring-0 focus-visible:border-sidebar-border/50 transition-all"
+          rows={1}
+          disabled={isLoading}
+        />
+        <Button
+          onClick={handleSend}
+          size="icon"
+          className="shrink-0 absolute right-2 top-1/2 -translate-y-1/2 size-8 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-200"
+          disabled={isLoading || !content?.trim()}
+          aria-label="Send message"
+        >
+          <ArrowUp size={18} />
+        </Button>
       </div>
-    </form>
+      <div className="flex items-center justify-between mt-2">
+        <p className="text-center text-xs text-muted-foreground/50">EdwinAI can make mistakes. Consider checking important information.</p>
+        <div className="flex items-center space-x-4">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
+            accept=".pdf"
+          />
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
+            <Upload className="mr-2 h-4 w-4" />
+            Resource
+          </Button>
+          <div className="flex items-center space-x-2">
+            <Switch id="grounded-mode" checked={isGrounded} onCheckedChange={setIsGrounded} />
+            <Label htmlFor="grounded-mode" className={cn("text-xs", isGrounded ? "text-muted-foreground" : "text-foreground")}>
+              {isGrounded ? 'Grounded' : 'Explore'}
+            </Label>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

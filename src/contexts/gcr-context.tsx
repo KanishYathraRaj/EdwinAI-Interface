@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { GcrCourse, GcrStudent } from '@/lib/types';
-import { getGcrCourses, getGcrStudents } from '@/lib/gcr';
+import { getGcrCourses, getGcrStudents, triggerGcrAuth } from '@/lib/gcr';
 import { useToast } from '@/hooks/use-toast';
 import { GcrAuthError } from '@/lib/utils';
 
@@ -15,6 +15,9 @@ interface GcrContextType {
     fetchStudents: (courseId: string, force?: boolean) => Promise<void>;
     isGcrAuthDone: boolean;
     setGcrAuthDone: (done: boolean) => void;
+    isAuthenticating: boolean;
+    setIsAuthenticating: (isAuth: boolean) => void;
+    lastAuthError: string | null;
 }
 
 const GcrContext = createContext<GcrContextType | undefined>(undefined);
@@ -35,6 +38,8 @@ export function GcrProvider({ children }: { children: React.ReactNode }) {
     const [isLoadingCourses, setIsLoadingCourses] = useState(false);
     const [loadingStudents, setLoadingStudents] = useState<Record<string, boolean>>({});
     const [isGcrAuthDone, setIsGcrAuthDone] = useState(false);
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
+    const [lastAuthError, setLastAuthError] = useState<string | null>(null);
     const { toast } = useToast();
 
     // Persist courses to localStorage whenever they change
@@ -47,15 +52,24 @@ export function GcrProvider({ children }: { children: React.ReactNode }) {
     const fetchCourses = useCallback(async (force = false) => {
         if (!force && courses.length > 0) return;
         if (activeCoursesPromise) return activeCoursesPromise;
+        if (isAuthenticating) {
+            console.log('[GcrContext] Skipping fetchCourses: Authentication in progress');
+            return;
+        }
 
         setIsLoadingCourses(true);
         activeCoursesPromise = (async () => {
             try {
                 const data = await getGcrCourses();
                 setCourses(data);
+                setLastAuthError(null);
             } catch (error: any) {
                 console.error('[GcrContext] Error fetching courses:', error);
-                if (!(error instanceof GcrAuthError)) {
+
+                if (error instanceof GcrAuthError) {
+                    setLastAuthError(error.message);
+                    // withGcrAuthRetry in lib/gcr.ts should have triggered auth
+                } else {
                     toast({
                         variant: "destructive",
                         title: "Failed to Fetch Courses",
@@ -70,20 +84,28 @@ export function GcrProvider({ children }: { children: React.ReactNode }) {
         })();
 
         return activeCoursesPromise;
-    }, [courses.length, toast]);
+    }, [courses.length, toast, isAuthenticating]);
 
     const fetchStudents = useCallback(async (courseId: string, force = false) => {
         if (!force && studentsCache[courseId]) return;
         if (activeStudentsPromises[courseId]) return activeStudentsPromises[courseId];
+        if (isAuthenticating) {
+            console.log(`[GcrContext] Skipping fetchStudents for ${courseId}: Authentication in progress`);
+            return;
+        }
 
         setLoadingStudents(prev => ({ ...prev, [courseId]: true }));
         activeStudentsPromises[courseId] = (async () => {
             try {
                 const data = await getGcrStudents(courseId);
                 setStudentsCache(prev => ({ ...prev, [courseId]: data }));
+                setLastAuthError(null);
             } catch (error: any) {
                 console.error(`[GcrContext] Error fetching students for ${courseId}:`, error);
-                if (!(error instanceof GcrAuthError)) {
+
+                if (error instanceof GcrAuthError) {
+                    setLastAuthError(error.message);
+                } else {
                     toast({
                         variant: "destructive",
                         title: "Failed to Fetch Students",
@@ -98,7 +120,7 @@ export function GcrProvider({ children }: { children: React.ReactNode }) {
         })();
 
         return activeStudentsPromises[courseId];
-    }, [studentsCache, toast]);
+    }, [studentsCache, toast, isAuthenticating]);
 
     return (
         <GcrContext.Provider
@@ -111,6 +133,9 @@ export function GcrProvider({ children }: { children: React.ReactNode }) {
                 fetchStudents,
                 isGcrAuthDone,
                 setGcrAuthDone: setIsGcrAuthDone,
+                isAuthenticating,
+                setIsAuthenticating,
+                lastAuthError,
             }}
         >
             {children}

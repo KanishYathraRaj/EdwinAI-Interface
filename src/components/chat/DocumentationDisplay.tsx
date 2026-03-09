@@ -25,7 +25,7 @@ interface DocumentationDisplayProps {
 export default function DocumentationDisplay({ documentation, onPublish, isPublishing }: DocumentationDisplayProps) {
     const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
     const { theme } = useTheme();
-    const isDark = theme === 'dark' || theme === 'classic-dark';
+    const isDark = theme === 'dark' || (theme as string) === 'classic-dark';
     const [publishedLocally, setPublishedLocally] = useState(documentation?.published_to_gcr || false);
 
     useEffect(() => {
