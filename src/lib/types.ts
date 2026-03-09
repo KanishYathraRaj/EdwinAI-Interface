@@ -9,6 +9,7 @@ export interface Message {
 export interface SyllabusTopic {
   title: string;
   subtopics: string[];
+  estimated_minutes?: number;
 }
 
 export interface Syllabus {
@@ -114,6 +115,38 @@ export interface Assessment {
 
 export type LatestQuiz = Assessment;
 
+export interface AssessmentTemplate {
+  quiz_title?: string;
+  quiz_description?: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  num_questions: number;
+  points_per_question: number;
+  shuffle_options: boolean;
+  grounded: boolean;
+}
+
+export interface TimeSlot {
+  startTime: string; // e.g., "09:00"
+  endTime: string;   // e.g., "10:00"
+}
+
+export interface DailyAvailability {
+  dayOfWeek: number;
+  slots: TimeSlot[];
+}
+
+export interface ScheduledSlot {
+  id: string;
+  topicTitle: string;
+  unitTitle: string;
+  date: string;
+  startTime?: string;
+  endTime?: string;
+  durationInMinutes: number;
+  status: 'scheduled' | 'completed' | 'missed' | 'cancelled';
+  orderIndex: number;
+}
+
 export interface Subject {
   id: string;
   subject_name: string;
@@ -121,6 +154,7 @@ export interface Subject {
   createdAt?: Timestamp;
   conversation_history?: Message[];
   syllabus?: Syllabus;
+  syllabus_status?: 'processing' | 'ready' | 'failed';
   question_bank?: QuestionBank;
   latest_question_bank?: QuestionBankHistory;
   documentation?: Documentation;
@@ -128,6 +162,14 @@ export interface Subject {
   completed_subtopics?: string[]; // Array of "Unit|Topic|Subtopic" strings
   gcr_course_id?: string;
   latest_quiz?: LatestQuiz;
+  assessment_template?: AssessmentTemplate;
+
+  // Scheduling fields
+  startDate?: string;
+  endDate?: string;
+  availability?: DailyAvailability[];
+  scheduledTopics?: ScheduledSlot[];
+  schedulingAlgorithm?: string;
 }
 
 export interface Chat extends Subject { }

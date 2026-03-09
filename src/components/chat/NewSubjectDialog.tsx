@@ -18,7 +18,7 @@ import { useState } from 'react';
 interface NewSubjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubjectCreate: (title: string, file: File | null) => void;
+  onSubjectCreate: (title: string, file: File) => void;
 }
 
 export function NewSubjectDialog({ open, onOpenChange, onSubjectCreate }: NewSubjectDialogProps) {
@@ -26,6 +26,7 @@ export function NewSubjectDialog({ open, onOpenChange, onSubjectCreate }: NewSub
   const [file, setFile] = useState<File | null>(null);
 
   const handleCreateSubject = () => {
+    if (!file) return;
     onSubjectCreate(title || 'New Subject', file);
     // Reset state after creation
     setTitle('');
@@ -46,7 +47,7 @@ export function NewSubjectDialog({ open, onOpenChange, onSubjectCreate }: NewSub
         <DialogHeader>
           <DialogTitle>Create New Subject</DialogTitle>
           <DialogDescription>
-            Provide details for your new subject session.
+            Uploading a syllabus PDF is mandatory and can only be done during subject creation.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -80,7 +81,7 @@ export function NewSubjectDialog({ open, onOpenChange, onSubjectCreate }: NewSub
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleCreateSubject}>Create Subject</Button>
+          <Button onClick={handleCreateSubject} disabled={!file}>Create Subject</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

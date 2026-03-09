@@ -7,6 +7,13 @@ export interface Profile {
   google_classroom_token: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
+  availability?: DailyAvailability[];
+}
+
+export interface SubjectDocument {
+  title: string;
+  url: string;
+  uploadedAt: string;
 }
 
 export interface ConversationEntry {
@@ -27,36 +34,89 @@ export interface QuestionBank {
   units?: QuestionBankUnit[];
 }
 
+export interface SyllabusTopic {
+  title: string;
+  subtopics: string[];
+  estimated_minutes?: number;
+}
+
 export interface SyllabusUnit {
-  unit_number: number;
+  unit_number: string;
   unit_title: string;
-  topics: string[];
+  topics: SyllabusTopic[];
 }
 
 export interface Syllabus {
-  course_title?: string;
-  units?: SyllabusUnit[];
+  course_title: string;
+  units: SyllabusUnit[];
+}
+
+export interface TimeSlot {
+  startTime: string; // "HH:MM"
+  endTime: string;   // "HH:MM"
+}
+
+export interface DailyAvailability {
+  dayOfWeek: number; // 0 (Sun) - 6 (Sat)
+  slots: TimeSlot[];
+}
+
+export interface ScheduledSlot {
+  id: string;
+  topicTitle: string;
+  unitTitle: string;
+  date: string; // "YYYY-MM-DD"
+  startTime?: string;
+  endTime?: string;
+  durationInMinutes: number;
+  status: 'scheduled' | 'completed' | 'missed' | 'cancelled';
+  orderIndex: number;
+}
+
+export interface AssessmentTemplate {
+  quiz_title?: string;
+  quiz_description?: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  num_questions: number;
+  points_per_question: number;
+  shuffle_options: boolean;
+  grounded: boolean;
 }
 
 export interface Subject {
   id: string;
   user_id: string;
-  // canonical name in the new schema
   subject_name: string;
-
-  // backward-compatible legacy fields (optional)
-  title?: string;
+  slug?: string;
   description?: string;
-
-  // new nested fields
-  resources?: string[];
-  conversation_history?: ConversationEntry[];
-  question_bank?: QuestionBank;
   syllabus?: Syllabus;
-  // Google Classroom linked course id
+  syllabus_status?: 'processing' | 'ready' | 'failed';
+  documents?: SubjectDocument[];
+  resources?: string[];
+  assessment_template?: AssessmentTemplate;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Batch {
+  id: string;
+  user_id: string;
+  subject_id: string; // Links to the Subject template
+  batch_name: string; // e.g., "NLP - IT Section"
+  slug?: string;
+
+  // GCR integration
   gcr_course_id?: string;
-  // generated documentation for the subject (optional)
-  documentation?: any;
+
+  // Scheduling
+  startDate?: string; // "YYYY-MM-DD"
+  endDate?: string;   // "YYYY-MM-DD"
+  availability?: DailyAvailability[];
+  scheduledTopics?: ScheduledSlot[];
+  schedulingAlgorithm?: string;
+
+  // Progress tracking
+  completed_subtopics?: string[]; // "Unit|Topic|Subtopic" strings
 
   created_at: string;
   updated_at: string;
@@ -121,4 +181,3 @@ export interface Resource {
   file_type: string;
   created_at: string;
 }
-

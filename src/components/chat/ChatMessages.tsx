@@ -1,8 +1,8 @@
 'use client'
 
 import type { Message } from "@/lib/types"
-import { ChatWelcome } from "./chat-welcome"
-import { ChatMessage } from "./chat-message"
+import { ChatWelcome } from "./ChatWelcome"
+import { ChatMessage } from "./ChatMessage"
 import { useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
 

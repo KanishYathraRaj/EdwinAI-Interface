@@ -29,7 +29,25 @@ export default function GenerateQuestionBankForm({ chat, onGenerated, onCancel }
     const { toast } = useToast();
 
     const syllabus = chat.syllabus;
-    if (!syllabus) return null;
+    const units = syllabus?.units || [];
+    if (!syllabus) {
+        return (
+            <Card className="w-full">
+                <CardHeader>
+                    <CardTitle>Generate Question Bank</CardTitle>
+                    <CardDescription>No syllabus found for this subject.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                        Uploading/reprocessing syllabus is disabled. Create a new subject with syllabus PDF to generate question banks.
+                    </p>
+                </CardContent>
+                <CardFooter>
+                    <Button variant="outline" onClick={onCancel}>Back</Button>
+                </CardFooter>
+            </Card>
+        );
+    }
 
     const handleToggleTopic = (topicTitle: string, subtopicsToToggle: string[] = []) => {
         setSelectedTopics(prev => {
@@ -69,6 +87,8 @@ export default function GenerateQuestionBankForm({ chat, onGenerated, onCancel }
                 body: JSON.stringify({
                     user_id: user.uid,
                     subject_id: chat.id,
+                    subject_slug: (chat as any).slug,
+                    parent_type: 'subjects',
                     user_subject_json: chat,
                     selected_topics: selectedTopics,
                     difficulty: difficulty,
@@ -79,7 +99,10 @@ export default function GenerateQuestionBankForm({ chat, onGenerated, onCancel }
                 }),
             });
 
-            if (!response.ok) throw new Error('Failed to generate question bank');
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err?.error || 'Failed to generate question bank');
+            }
 
             toast({
                 title: "Generation Started",
@@ -165,7 +188,7 @@ export default function GenerateQuestionBankForm({ chat, onGenerated, onCancel }
                     <Label>Select Topics (Leave empty for full syllabus)</Label>
                     <div className="max-h-[30vh] overflow-y-auto border rounded-md p-2 scrollbar-thin">
                         <Accordion type="multiple" className="w-full">
-                            {syllabus.units.map((unit, uIdx) => {
+                            {units.map((unit, uIdx) => {
                                 const unitTitle = unit.unit_title || `Unit ${uIdx + 1}`;
                                 const unitLabel = unit.unit_number ? `${unit.unit_number}: ${unitTitle}` : unitTitle;
 
